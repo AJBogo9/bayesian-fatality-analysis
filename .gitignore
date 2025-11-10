@@ -1,4 +1,11 @@
-.Rproj.user
+# Quarto/R Markdown outputs
+*.pdf
+*.html
+*_cache/
+*_files/
+
+# R specific
+.Rproj.user/
 .Rhistory
 .RData
 .Ruserdata
