@@ -292,10 +292,10 @@ The variation in fatality distributions across aircraft types suggests that a hi
 
 Based on the EDA:
 
-1. Response variable: Fatalities (count data)
-2. Distribution characteristics based on variance-to-mean ratio
-3. Recommended likelihood: Negative Binomial or Poisson
-4. Hierarchical grouping: Aircraft type, operator, or region
+1.  Response variable: Fatalities (count data)
+2.  Distribution characteristics based on variance-to-mean ratio
+3.  Recommended likelihood: Negative Binomial or Poisson
+4.  Hierarchical grouping: Aircraft type, operator, or region
 
 # Proposed Models
 
@@ -323,12 +323,12 @@ Based on the EDA:
 
 # Next Steps
 
-1. Define informative priors based on domain knowledge
-2. Fit models using brms
-3. Conduct convergence diagnostics
-4. Perform posterior predictive checks
-5. Compare models using LOO-CV
-6. Sensitivity analysis
+1.  Define informative priors based on domain knowledge
+2.  Fit models using brms
+3.  Conduct convergence diagnostics
+4.  Perform posterior predictive checks
+5.  Compare models using LOO-CV
+6.  Sensitivity analysis
 
 # References
 
