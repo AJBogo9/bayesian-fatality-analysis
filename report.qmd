@@ -1,0 +1,158 @@
+---
+title: "Bayesian Analysis of Aviation Accidents"
+author: "Andreas Bogossian & Markus Kruth"
+bibliography: references.bib
+csl: ieee.csl
+format:
+  pdf:
+    toc: true
+    number-sections: true
+    colorlinks: true
+    link-citations: true
+  html:
+    toc: true
+    code-fold: true
+    code-summary: "Show code"
+execute:
+  warning: false
+  message: false
+  cache: true
+---
+
+# Introduction
+
+The dataset used in the project describes the air plane crashes from 1908 to 2024. In our project, we'll only focus on crashes that happened after the year 1970. We make this desicion to get a better picture of the current state of the industry. The dataset can be found and downloaded from Kaggle [@jogwums2023aircrashes].
+
+## Motivation
+
+Aviation has undergone massive developments since the first commercial flight in 1914. Airplane safety has always been the top priority for airlines; a single airplane crash will drive away customers to safer perceived airlines and, of course, cost lives. Although this priority of making airplanes as safe as possible has significantly reduced the number of crashes over the years, accidents still continue to occur. However, not all accidents are the same; survivability in crashes varies significantly. Understanding which factors influence survivability in crashes remains crucial for manufacturers and airlines seeking to minimize the loss of life. While accident prevention remains the most important priority, understanding the fatality patterns when accidents do occur is equally important in discussions of airplane safety. 
+
+## Problem
+
+When aviation accidents occur, the fatality rates vary significantly from incidents where all passengers survive to catastrophic losses of all who were on board. This variation raises critical questions: Has the likelihood of surviving an ariplane crash improved over time? Do certain airplane manufacturers demonstrate conistently higher crash survival rates than others? How much of the variation in crash fatality rates can be attributed to crash specific details of individual accidents versus inherent airplane characteristics? These are questions that we hope to answer in our report.
+
+## Main modeling idea
+
+We address these questions using hierarchical Bayesian modeling of fatality rates across aviation accidents from 1970 to 2024. In this approach we will assume that the aircrafts from the same manufacturers share some of the same characteristics, like similar design choices, engineering approaches, and safety systems. We still keep the information that all the aircrafts are similar with each other by having the high-level pooling for all the aircrafts. We will compare this partially-pooled model with two different models: fully pooled model and fully separate model.
+
+## Data description
+
+```{r}
+#| label: setup
+#| include: false
+
+library(tidyverse)
+library(brms)
+library(bayesplot)
+library(loo)
+library(posterior)
+library(skimr)
+library(knitr)
+library(patchwork)
+
+# plotting theme
+theme_set(theme_minimal())
+
+# use parallel computing if possible
+options(mc.cores = parallel::detectCores())
+```
+
+```{r}
+#| label: load-data
+#| include: false
+
+# Load your plane crash data
+crashes <- read_csv("data/aircrashdata.csv")
+
+# Clean column names for easier use
+crashes <- crashes %>%
+  rename(
+    year = Year,
+    quarter = Quarter,
+    month = Month,
+    day = Day,
+    country = `Country/Region`,
+    aircraft_manufacturer = `Aircraft Manufacturer`,
+    aircraft_type = Aircraft,
+    location = Location,
+    operator = Operator,
+    ground = `Ground`,
+    fatalities = `Fatalities (air)`,
+    aboard = Aboard
+  )
+```
+
+```{r}
+#| label: data-summary
+
+# overview statistics
+skim_with(
+  character = sfl(min = NULL, max = NULL, empty = NULL, whitespace = NULL),
+  numeric = sfl(hist = NULL)
+)(crashes)
+
+# first rows of dataset
+head(crashes) %>% 
+  kable(caption = "First few rows of plane crash data")
+```
+
+```{r}
+#| label: fig-response-dist
+#| fig-cap: "Distribution of fatalities in aviation accidents"
+#| fig-width: 10
+#| fig-height: 4
+
+p1 <- ggplot(crashes, aes(x = fatalities)) +
+  geom_histogram(bins = 50, fill = "steelblue", alpha = 0.7) +
+  labs(title = "Histogram of Fatalities",
+       x = "Number of Fatalities",
+       y = "Count")
+
+p1
+```
+
+```{r}
+#| label: fig-temporal
+#| fig-cap: "Temporal trends in aviation accidents"
+#| fig-width: 10
+#| fig-height: 6
+
+# Plot with just data points
+p1 <- ggplot(crashes, aes(x = year, y = fatalities)) +
+  geom_point(alpha = 0.3) +
+  labs(title = "Fatalities Over Time (Data Points)",
+       x = "Year", y = "Fatalities")
+
+# Plot with just the trend line
+p2 <- ggplot(crashes, aes(x = year, y = fatalities)) +
+  geom_smooth(method = "loess", color = "red") +
+  labs(title = "Fatalities Over Time (Trend)",
+       x = "Year", y = "Fatalities")
+
+# Plot with just the line (data points)
+p3 <- crashes %>%
+  group_by(year) %>%
+  summarise(n_crashes = n(),
+            total_fatalities = sum(fatalities, na.rm = TRUE)) %>%
+  ggplot(aes(x = year, y = n_crashes)) +
+  geom_line() +
+  labs(title = "Number of Crashes Over Time (Data)",
+       x = "Year", y = "Number of Crashes")
+
+# Plot with just the trend line
+p4 <- crashes %>%
+  group_by(year) %>%
+  summarise(n_crashes = n(),
+            total_fatalities = sum(fatalities, na.rm = TRUE)) %>%
+  ggplot(aes(x = year, y = n_crashes)) +
+  geom_smooth(method = "loess", color = "red") +
+  labs(title = "Number of Crashes Over Time (Trend)",
+       x = "Year", y = "Number of Crashes")
+
+# Display all four plots in a 2x2 grid
+(p1 | p2) / (p3 | p4)
+```
+
+
+
+# References
