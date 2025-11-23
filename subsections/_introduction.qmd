@@ -1,0 +1,10 @@
+The dataset used in the project describes the air plane crashes from 1908 to 2024. In our project, we'll only focus on crashes that happened after the year 1970. **(WHY???)** We make this decision to get a better picture of the current state of the industry. The dataset can be found and downloaded from Kaggle [@jogwums2023aircrashes].
+
+## Motivation
+
+**rewrite these?**
+Aviation has undergone massive developments since the first commercial flight in 1914. Airplane safety has always been the top priority for airlines; a single airplane crash will drive away customers to safer perceived airlines and, of course, cost lives. Although this priority of making airplanes as safe as possible has significantly reduced the number of crashes over the years, accidents still continue to occur. However, not all accidents are the same; survivability in crashes varies significantly. Understanding which factors influence survivability in crashes remains crucial for manufacturers and airlines seeking to minimize the loss of life. While accident prevention remains the most important priority, understanding the fatality patterns when accidents do occur is equally important in discussions of airplane safety. 
+
+## Problem
+
+When aviation accidents occur, the fatality rates vary significantly from incidents where all passengers survive to catastrophic losses of all who were on board. This variation raises critical questions: Has the likelihood of surviving an airplane crash improved over time? Do certain airplane manufacturers demonstrate consistently higher crash survival rates than others? How much of the variation in crash fatality rates can be attributed to crash specific details of individual accidents versus inherent airplane characteristics? These are questions that we hope to answer in our report.

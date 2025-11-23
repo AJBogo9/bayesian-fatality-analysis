@@ -1,0 +1,57 @@
+---
+title: "Bayesian Analysis of Aviation Accidents"
+author: "Andreas Bogossian & Markus Kruth"
+bibliography: references.bib
+csl: ieee.csl
+format:
+  pdf:
+    toc: true
+    number-sections: true
+    colorlinks: true
+    link-citations: true
+  html:
+    toc: true
+    code-fold: true
+    code-summary: "Show code"
+execute:
+  warning: false
+  message: false
+  cache: true
+---
+
+# Introduction
+{{< include subsections/_introduction.qmd >}}
+
+# Data Description
+{{< include subsections/_data-description.qmd >}}
+
+# Data Modeling
+{{< include subsections/_data-modeling.qmd >}}
+
+# Model 1: Non-Hierarchical Beta-Binomial (no pooling)
+{{< include subsections/_model-1.qmd >}}
+
+# Model 2: Non-Hierarchical model (complete pooling)
+{{< include subsections/_model-2.qmd >}}
+
+# Model 3: Hierarchical Model by Aircraft Type
+{{< include subsections/_model-3.qmd >}}
+
+# Model comparison
+
+- with LOO-CV?
+
+# Discussion
+
+- known issues
+- potential improvements
+
+# Conclusions
+
+- What was learned?
+
+# Self reflection
+
+- What did the group learn during the project?
+
+# References
