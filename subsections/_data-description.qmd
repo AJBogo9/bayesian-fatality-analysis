@@ -1,0 +1,164 @@
+```{r}
+#| label: setup
+#| include: false
+
+library(tidyverse)
+library(brms)
+library(bayesplot)
+library(loo)
+library(posterior)
+library(skimr)
+library(knitr)
+library(patchwork)
+library(ggdist)
+library(tidybayes)
+
+# plotting theme
+theme_set(theme_minimal())
+
+# use parallel computing if possible
+options(mc.cores = parallel::detectCores())
+```
+
+```{r}
+#| label: load-data
+#| include: false
+
+# Load your plane crash data
+crashes <- read_csv("data/aircrashdata.csv")
+
+# Clean column names and filter valid observations
+crashes <- crashes %>%
+  rename(
+    year = Year,
+    quarter = Quarter,
+    month = Month,
+    day = Day,
+    country = `Country/Region`,
+    aircraft_manufacturer = `Aircraft Manufacturer`,
+    aircraft_type = Aircraft,
+    location = Location,
+    operator = Operator,
+    ground = Ground,
+    fatalities = `Fatalities (air)`,
+    aboard = Aboard
+  ) %>%
+  # Filter valid observations
+  filter(
+    !is.na(fatalities),
+    !is.na(aboard),
+    !is.na(aircraft_type),
+    aboard > 0,
+    fatalities <= aboard  # Sanity check: can't have more deaths than people aboard
+  ) %>%
+  mutate(
+    # Calculate fatality rate once
+    fatality_rate = fatalities / aboard,
+    # Standardize year for better convergence
+    year_scaled = scale(year)[,1],
+  )
+  
+```
+
+## Overview
+
+```{r}
+#| label: data-summary
+
+# overview statistics
+skim_with(
+  character = sfl(min = NULL, max = NULL, empty = NULL, whitespace = NULL),
+  numeric = sfl(hist = NULL)
+)(crashes)
+
+# first rows of dataset
+head(crashes) %>% 
+  kable(caption = "First few rows of plane crash data")
+```
+
+## Crashes Over Time
+
+```{r}
+#| label: num-of-crashes
+#| fig-cap: "Temporal trends in aviation accidents"
+#| fig-width: 12
+#| fig-height: 4
+
+# Plot with just the line (data points)
+p1 <- crashes %>%
+  group_by(year) %>%
+  summarise(n_crashes = n(),
+            total_fatalities = sum(fatalities, na.rm = TRUE)) %>%
+  ggplot(aes(x = year, y = n_crashes)) +
+  geom_line() +
+  labs(title = "Number of Crashes Over Time (Data)",
+       x = "Year", y = "Number of Crashes")
+
+# Plot with just the trend line
+p2 <- crashes %>%
+  group_by(year) %>%
+  summarise(n_crashes = n(),
+            total_fatalities = sum(fatalities, na.rm = TRUE)) %>%
+  ggplot(aes(x = year, y = n_crashes)) +
+  geom_smooth(method = "loess", color = "red") +
+  labs(title = "Number of Crashes Over Time (Trend)",
+       x = "Year", y = "Number of Crashes")
+
+# Display all four plots in a 2x2 grid
+(p1 | p2)
+```
+
+## Fatalities Over Time
+
+```{r}
+#| label: fatalities-over-time
+#| fig-cap: "Trends in aviation accidents"
+#| fig-width: 12
+#| fig-height: 4
+
+# Plot with just data points
+p1 <- crashes %>%
+  ggplot(aes(x = year, y = fatalities)) +
+  geom_point(alpha = 0.3) +
+  labs(title = "Fatalities Over Time (Data Points)",
+       x = "Year", y = "Fatalities")
+
+# Plot with just the trend line
+p2 <- crashes %>%
+  ggplot(aes(x = year, y = fatalities)) +
+  geom_smooth(method = "loess", color = "red") +
+  labs(title = "Fatalities Over Time (Trend)",
+       x = "Year", y = "Fatalities")
+
+(p1 | p2)
+
+```
+
+
+## Fatality Rate Over Time
+
+```{r}
+#| label: fatality-rate
+#| fig-width: 12
+#| fig-height: 4
+
+# Plot 1: Fatality rate over time
+p1 <- crashes %>%
+  mutate(fatality_rate = fatalities / aboard) %>%
+  ggplot(aes(x = year, y = fatality_rate)) +
+  geom_point(alpha = 0.3, size = 1) +
+  geom_smooth(method = "gam", color = "blue", se = TRUE) +
+  labs(title = "Fatality Rate Over Time",
+       x = "Year", y = "Fatality Rate (proportion)") +
+  scale_y_continuous(labels = scales::percent)
+
+# Plot 2: Distribution of fatalities
+p2 <- crashes %>%
+  ggplot(aes(x = fatalities)) +
+  geom_histogram(bins = 50, fill = "steelblue", alpha = 0.7) +
+  labs(title = "Distribution of Fatalities per Crash",
+       x = "Fatalities", y = "Count")
+
+# Combine plots
+(p1 | p2)
+```
