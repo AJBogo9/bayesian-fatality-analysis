@@ -26,10 +26,3 @@ We address these questions using hierarchical Bayesian modeling of fatality rate
 
 ## Priors?
 - weakly informative priors centered at zero
-
-## Similar Projects
-- Kaggle has three projects linked to the plain crash dataset [@jogwums2023aircrashes]
-- All with python, not R like ours
-- None of the projects use the bayesian data analysis tools we use in our project (hierarchical and non-hierarchical models, priors and posteriors)
-- Two of the three projects have exploratory data analysis like ours (in the beginning of our report)
-- Other than the three notebooks in Kaggle, there can't be found any similar projects with a quick web search
