@@ -1,0 +1,144 @@
+## Complete Pooling Model
+
+This model treats all plane crashes as coming from a single population, ignoring differences between countries, manufacturers, or time periods.
+
+### Fit Complete Pooling Model
+
+We'll model the fatality rate using a binomial model with logit link. This approach:
+- Naturally handles proportions including 0s and 1s
+- Models fatalities out of total aboard (respects the actual counts)
+- Uses the logit transformation internally
+- More appropriate for count data than beta regression
+
+```{r}
+#| label: model2
+#| cache: true
+
+# Check the data structure
+crashes %>%
+  summarise(
+    n_zeros = sum(fatalities == 0),
+    n_all_died = sum(fatalities == aboard),
+    min_rate = min(fatality_rate),
+    max_rate = max(fatality_rate)
+  )
+
+# Fit complete pooling model with binomial family
+complete_pool_model <- brm(
+  fatalities | trials(aboard) ~ 1 + year_scaled,
+  data = crashes,
+  family = binomial(link = "logit"),
+  prior = c(
+    prior(normal(0, 1.5), class = Intercept),
+    prior(normal(0, 0.5), class = b)
+  ),
+  chains = 4,
+  iter = 2000,
+  warmup = 1000,
+  cores = 4,
+  seed = 123,
+  backend = "cmdstanr",
+  refresh = 0
+)
+```
+
+### Model Summary
+
+```{r}
+#| label: model2 summary
+
+summary(complete_pool_model)
+```
+
+### Posterior Predictive Checks
+
+```{r}
+#| label: model2 fit check
+
+# Check model fit
+pp_check(complete_pool_model, ndraws = 100)
+```
+
+### Visualize Predictions
+
+```{r}
+#| label: model2 visualisation
+
+# Create prediction data
+# For binomial models, we need to specify the number of trials
+# We'll use the mean number aboard as a reference point
+pred_data <- tibble(
+  year_scaled = seq(min(crashes$year_scaled), 
+                    max(crashes$year_scaled), 
+                    length.out = 100),
+  aboard = round(mean(crashes$aboard))  # Use mean as reference
+)
+
+# Generate predictions (these are expected counts of fatalities)
+predictions <- pred_data %>%
+  add_epred_draws(complete_pool_model, ndraws = 1000) %>%
+  mutate(.epred_rate = .epred / aboard)  # Convert to rate for plotting
+
+# Plot predictions with uncertainty
+ggplot() +
+  stat_lineribbon(
+    data = predictions,
+    aes(x = year_scaled, y = .epred_rate),
+    .width = c(0.50, 0.80, 0.95),
+    alpha = 0.5
+  ) +
+  geom_point(
+    data = crashes,
+    aes(x = year_scaled, y = fatality_rate),
+    alpha = 0.2,
+    size = 1
+  ) +
+  scale_fill_brewer(palette = "Blues") +
+  labs(
+    title = "Complete Pooling Model: Fatality Rate Over Time",
+    subtitle = paste0("Predictions shown for flights with ", 
+                     round(mean(crashes$aboard)), " people aboard (mean)"),
+    x = "Year (Standardized)",
+    y = "Fatality Rate",
+    fill = "Credible Interval"
+  ) +
+  theme_minimal()
+```
+
+### Extract and Interpret Coefficients
+
+```{r}
+#| label: model2 interpretation
+
+# Extract posterior samples
+posterior_samples <- as_draws_df(complete_pool_model)
+
+# Summarize key parameters on logit scale
+posterior_samples %>%
+  select(b_Intercept, b_year_scaled) %>%
+  pivot_longer(everything(), names_to = "parameter", values_to = "value") %>%
+  group_by(parameter) %>%
+  summarise(
+    mean = mean(value),
+    sd = sd(value),
+    q025 = quantile(value, 0.025),
+    q975 = quantile(value, 0.975)
+  )
+
+# Convert intercept to probability scale for interpretation
+posterior_samples %>%
+  mutate(baseline_prob = plogis(b_Intercept)) %>%
+  summarise(
+    mean_baseline_fatality_rate = mean(baseline_prob),
+    q025 = quantile(baseline_prob, 0.025),
+    q975 = quantile(baseline_prob, 0.975)
+  )
+```
+
+### Model Interpretation
+
+The complete pooling model assumes:
+- All crashes share the same underlying fatality rate pattern
+- Temporal trend captured by `year_scaled` coefficient
+- No variation between countries, manufacturers, or other grouping factors
+- This serves as a baseline for comparison with partial pooling (hierarchical) models

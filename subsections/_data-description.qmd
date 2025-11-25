@@ -45,11 +45,8 @@ crashes <- crashes %>%
   ) %>%
   # Filter valid observations
   filter(
-    !is.na(fatalities),
-    !is.na(aboard),
-    !is.na(aircraft_type),
     aboard > 0,
-    fatalities <= aboard  # Sanity check: can't have more deaths than people aboard
+    fatalities <= aboard
   ) %>%
   mutate(
     # Calculate fatality rate once
@@ -60,10 +57,9 @@ crashes <- crashes %>%
   
 ```
 
-## Overview
-
 ```{r}
 #| label: data-summary
+#| include: false
 
 # overview statistics
 skim_with(
@@ -133,7 +129,6 @@ p2 <- crashes %>%
 (p1 | p2)
 
 ```
-
 
 ## Fatality Rate Over Time
 

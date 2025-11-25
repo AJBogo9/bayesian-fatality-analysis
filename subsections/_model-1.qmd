@@ -4,36 +4,23 @@ This baseline model treats all crashes independently with a temporal trend.
 #| label: model1
 #| cache: true
 
-# Set a flag for quick testing vs final run
-QUICK_TEST <- TRUE  # Set to TRUE during development
-
-if (QUICK_TEST) {
-  chains_n <- 2
-  iter_n <- 1000
-  warmup_n <- 500
-  test_data <- crashes %>% sample_frac(0.3)
-} else {
-  chains_n <- 4
-  iter_n <- 2000
-  warmup_n <- 1000
-  test_data <- crashes
-}
-
 # Specify the model
 model1 <- brm(
   fatalities | trials(aboard) ~ year_scaled,
-  data = test_data,
+  data = crashes,
   family = binomial(link = "logit"),
   prior = c(
     prior(normal(0, 2), class = Intercept),
     prior(normal(0, 1), class = b)
   ),
-  chains = chains_n,
-  iter = iter_n,
-  warmup = warmup_n,
+  chains = 4,
+  iter = 2000,
+  warmup = 1000,
   cores = 4,
   seed = 123,
-  control = list(adapt_delta = 0.95)
+  control = list(adapt_delta = 0.95),
+  backend = "cmdstanr",
+  refresh = 0
 )
 
 # Model summary

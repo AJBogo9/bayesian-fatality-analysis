@@ -14,4 +14,4 @@ When aviation accidents occur, the fatality rates vary significantly from incide
 - All with python, not R like ours
 - None of the projects use the bayesian data analysis tools we use in our project (hierarchical and non-hierarchical models, priors and posteriors)
 - Two of the three projects have exploratory data analysis like ours (in the beginning of our report)
-- Other than the three notebooks in Kaggle, there can't be found any similar projects with a quick web search
+- Other than the three notebooks in Kaggle, there are no other similar projects with the dataset that the team would be aware of
