@@ -34,7 +34,7 @@ execute:
 # Model 2: Non-Hierarchical model (complete pooling)
 {{< include subsections/_model-2.qmd >}}
 
-# Model 3: Hierarchical Model by Aircraft Type
+# Model 3: Hierarchical Model by Manufacturer
 {{< include subsections/_model-3.qmd >}}
 
 # Model comparison
