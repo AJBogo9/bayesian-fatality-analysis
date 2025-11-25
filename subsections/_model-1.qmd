@@ -1,3 +1,13 @@
+## Prior selection
+For the intercept term $\alpha$, we can use an informative prior by using the observed fatality rate of $\approx 0.8$ from the data. We can use a normal distribution with the mean value coming from the observed fatality rate transformed onto the logit scale by
+
+$\operatorname{logit}(p) = \ln\!\left(\frac{p}{1-p}\right).$
+
+For example, $\operatorname{logit}(0.8) \approx 1.386$, which we round to $1.4$. For a weakly informative prior like ours, a standard deviation of $1$ is a reasonable choice to keep the coefficient in a reasonable ballpark without adding too much constraint.
+
+For the $\beta$ coefficient on the normalized year we can be more conservative. The fatality rate plot shows only little yearly change, so it is reasonable to constrain the $\beta$ prior to smaller values. A normal distribution with mean $0$ and standard deviation $0.5$ seems reasonable. The 95% credible interval for $\beta$ is then approximately $[-1.0, 1.0]$.
+
+## Model 1 fit
 This baseline model treats all crashes independently with a temporal trend.
 
 ```{r}
@@ -10,8 +20,8 @@ model1 <- brm(
   data = crashes,
   family = binomial(link = "logit"),
   prior = c(
-    prior(normal(0, 2), class = Intercept),
-    prior(normal(0, 1), class = b)
+    prior(normal(1.4, 1), class = Intercept),
+    prior(normal(0, 0.5), class = b)
   ),
   chains = 4,
   iter = 2000,
@@ -34,10 +44,10 @@ summary(model1)
 #| fig-cap: "Predicted fatality rates over calendar years"
 
 # Create predictions with original years
-year_range <- range(test_data$year)
+year_range <- range(crashes$year)
 new_data <- tibble(
   year = seq(year_range[1], year_range[2], by = 1),
-  year_scaled = (year - mean(test_data$year)) / sd(test_data$year),
+  year_scaled = (year - mean(crashes$year)) / sd(crashes$year),
   aboard = 100
 )
 
@@ -46,7 +56,7 @@ predictions <- add_epred_draws(new_data, model1) %>%
 
 ggplot(predictions, aes(x = year, y = fatality_rate)) +
   stat_lineribbon(.width = c(0.95, 0.80), alpha = 0.5) +
-  geom_point(data = test_data, 
+  geom_point(data = crashes, 
              aes(y = fatality_rate), 
              alpha = 0.2, size = 0.8) +
   scale_fill_brewer(palette = "Blues") +
@@ -98,7 +108,7 @@ cat("\nFatality Rate Predictions:\n")
 cat("==========================\n")
 
 # Calculate predicted rates for specific years
-years_of_interest <- c(1950, 1970, 1990, 2000)
+years_of_interest <- c(1975, 2000, 2010, 2020)
 predictions_df <- data.frame()
 
 for (yr in years_of_interest) {
