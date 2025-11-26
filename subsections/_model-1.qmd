@@ -1,12 +1,3 @@
-## Prior selection
-For the intercept term $\alpha$, we can use an informative prior by using the observed fatality rate of $\approx 0.8$ from the data. We can use a normal distribution with the mean value coming from the observed fatality rate transformed onto the logit scale by
-
-$\operatorname{logit}(p) = \ln\!\left(\frac{p}{1-p}\right).$
-
-For example, $\operatorname{logit}(0.8) \approx 1.386$, which we round to $1.4$. For a weakly informative prior like ours, a standard deviation of $1$ is a reasonable choice to keep the coefficient in a reasonable ballpark without adding too much constraint.
-
-For the $\beta$ coefficient on the normalized year we can be more conservative. The fatality rate plot shows only little yearly change, so it is reasonable to constrain the $\beta$ prior to smaller values. A normal distribution with mean $0$ and standard deviation $0.5$ seems reasonable. The 95% credible interval for $\beta$ is then approximately $[-1.0, 1.0]$.
-
 ## Model 1 fit
 This baseline model treats all crashes independently with a temporal trend.
 

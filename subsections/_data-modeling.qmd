@@ -24,5 +24,20 @@ We address these questions using hierarchical Bayesian modeling of fatality rate
 - Countries/regions are not independent
 - Complete pooling/no pooling
 
-## Priors?
-- weakly informative priors centered at zero
+## Prior selection
+### Global intercept
+For the intercept term $\alpha$, we can use an informative prior by using the observed fatality rate of $\approx 0.8$ from the data. We can use a normal distribution with the mean value coming from the observed fatality rate transformed onto the logit scale by
+
+$\operatorname{logit}(p) = \ln\!\left(\frac{p}{1-p}\right).$
+
+For example, $\operatorname{logit}(0.8) \approx 1.386$, which we round to $1.4$. For a weakly informative prior like ours, a standard deviation of $1$ is a reasonable choice to keep the coefficient in a reasonable ballpark without adding too much constraint.
+
+### Year coefficient
+For the $\beta$ coefficient on the normalized year we can be more conservative. The fatality rate plot shows only little yearly change, so it is reasonable to constrain the $\beta$ prior to smaller values. A normal distribution with mean $0$ and standard deviation $0.5$ seems reasonable. The 95% credible interval for $\beta$ is then approximately $[-1.0, 1.0]$.
+
+### Group level standard deviation
+In our hierarchical model we have an extra intercept term based on the aircraft manufacturer, which is drawn from a normal distribution with a mean of 0 and standard deviation of $\sigma$. We need a appropriate prior for this group level standard deviation term $\sigma$. Observing the manufacturer level data, we see that the fatality rates fall roughly between 0.6 and 0.95 on all manufacturers. We can assume that this interval corresponds to $\pm2\sigma$, so 95% of the groups. Converting this scale to the logit scale, we can calculate 
+
+$\sigma$: $2\sigma \approx \frac{\operatorname{logit}(0.95) - \operatorname{logit}(0.6)}{2} \Rightarrow \sigma = \frac{\operatorname{logit}(0.95) - \operatorname{logit}(0.6)}{4} \approx 0.635$.
+
+ A halfnormal distribution with mean of 0 and standard deviation of 0.6 should be a good prior choice. The mean of this distribution is $E[X] = \sigma\sqrt{\frac{2}{\pi}} \approx 0.479$, which seems reasonable for our model.
