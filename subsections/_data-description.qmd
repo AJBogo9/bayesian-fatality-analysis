@@ -99,8 +99,7 @@ p2 <- crashes %>%
   labs(title = "Number of Crashes Over Time (Trend)",
        x = "Year", y = "Number of Crashes")
 
-# Display all four plots in a 2x2 grid
-(p1 | p2)
+p1 + p2
 ```
 
 ## Fatalities Over Time
@@ -125,7 +124,7 @@ p2 <- crashes %>%
   labs(title = "Fatalities Over Time (Trend)",
        x = "Year", y = "Fatalities")
 
-(p1 | p2)
+p1 + p2
 ```
 
 ## Fatality Rate Over Time
@@ -146,15 +145,22 @@ rate_ts <- crashes %>%
     se = ifelse(n > 1, sd_rate / sqrt(n), NA_real_)
   )
 
-ggplot(rate_ts, aes(x = year, y = mean_rate)) +
-  geom_line() +
-  geom_point(alpha = 0.6) +
-  geom_ribbon(aes(ymin = mean_rate - 1.96 * se,
-                  ymax = mean_rate + 1.96 * se),
-              alpha = 0.2, na.rm = TRUE) +
-  geom_smooth(method = "loess", color = "red", se = FALSE) +
-  labs(title = "Mean Fatality Rate Over Time",
+# Plot 1: Individual data points
+p1 <- crashes %>%
+  ggplot(aes(x = year, y = fatality_rate)) +
+  geom_point(alpha = 0.3) +
+  labs(title = "Fatality Rate Over Time (Data Points)",
+       x = "Year", y = "Fatality Rate")
+
+
+# Plot 2: Trend
+p2 <- ggplot(rate_ts, aes(x = year, y = mean_rate)) +
+  geom_smooth(method = "loess", color = "red", se = TRUE) +
+  labs(title = "Fatality Rate Trend",
        x = "Year", y = "Mean Fatality Rate")
+
+# Combine plots side by side
+p1 + p2
 ```
 
 To conduct a modern analysis on plane crash fatalities, we do not want to include observations from far back in the history. We need some reasonable cutoff point that keeps sufficient amount of data and allows us to model modern aircraft data. The fatalities trend shows a turning point at around 1975 so it is reasonable to choose that as our observation cutoff year. 
