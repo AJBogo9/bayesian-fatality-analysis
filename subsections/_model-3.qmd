@@ -1,14 +1,6 @@
 ```{r}
 #| label: model3-prep
 
-# Keep only manufacturers with at least 10 crashes
-min_crashes <- 10
-
-crashes_filtered <- crashes %>%
-  group_by(aircraft_manufacturer) %>%
-  filter(n() >= min_crashes) %>%
-  ungroup()
-
 # Check what we have now
 manufacturer_summary <- crashes_filtered %>%
   count(aircraft_manufacturer, sort = TRUE)

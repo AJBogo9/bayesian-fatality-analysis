@@ -173,6 +173,22 @@ cat("Observations before filtering:", len_before, "\n")
 cat("Observations after filtering:", len_after, "\n")
 cat("Rows removed:", len_before - len_after, "\n")
 ```
+Keep only manufacturers where we have data for over 10 crashes
+```{r}
+len_before <- nrow(crashes)
+
+min_crashes <- 10
+crashes <- crashes %>%
+  group_by(aircraft_manufacturer) %>%
+  filter(n() >= min_crashes) %>%
+  ungroup()
+
+len_after <- nrow(crashes)
+
+cat("Observations before filtering:", len_before, "\n")
+cat("Observations after filtering:", len_after, "\n")
+cat("Rows removed:", len_before - len_after, "\n")
+```
 
 ```{r}
 crashes %>%

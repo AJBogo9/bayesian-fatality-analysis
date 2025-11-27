@@ -1,115 +1,171 @@
-## Model 1 fit
-This baseline model treats all crashes independently with a temporal trend.
+## No Pooling Model
+
+This model treats each aircraft manufacturer completely separately, fitting independent fatality rate patterns for each manufacturer without borrowing any information between groups.
+
+### Fit No Pooling Model
+
+We'll fit separate binomial models per manufacturer using fixed effects. This approach:
+- Gives each manufacturer its own intercept and temporal trend
+- Uses no information sharing (no pooling) between manufacturers
+- Requires sufficient data per manufacturer (minimum 10 crashes)
+- Uses the same binomial family and logit link as other models
 
 ```{r}
 #| label: model1
 #| cache: true
 
-# Specify the model
-model1 <- brm(
-  fatalities | trials(aboard) ~ year_scaled,
+# Check the data structure
+crashes %>%
+  summarise(
+    n_manufacturers = n_distinct(aircraft_manufacturer),
+    n_crashes = n(),
+    n_zeros = sum(fatalities == 0),
+    n_all_died = sum(fatalities == aboard),
+    min_rate = min(fatality_rate),
+    max_rate = max(fatality_rate)
+  )
+
+# Fit no-pooling model with separate intercept and slope per manufacturer
+# Using 0 to remove the global intercept, then add manufacturer-specific intercepts
+no_pool_model <- brm(
+  fatalities | trials(aboard) ~ 0 + aircraft_manufacturer + aircraft_manufacturer:year_scaled,
   data = crashes,
   family = binomial(link = "logit"),
   prior = c(
-    prior(normal(1.4, 1), class = Intercept),
-    prior(normal(0, 0.5), class = b)
+    prior(normal(0, 1), class = b)
   ),
   chains = 4,
   iter = 2000,
   warmup = 1000,
   cores = 4,
   seed = 123,
-  control = list(adapt_delta = 0.95),
   backend = "cmdstanr",
   refresh = 0
 )
-
-# Model summary
-summary(model1)
 ```
 
-## Model 1 Visualization
+### Model Summary
 
 ```{r}
-#| label: fig-model1-predictions-years
-#| fig-cap: "Predicted fatality rates over calendar years"
+#| label: model1 summary
 
-# Create predictions with original years
-year_range <- range(crashes$year)
-new_data <- tibble(
-  year = seq(year_range[1], year_range[2], by = 1),
-  year_scaled = (year - mean(crashes$year)) / sd(crashes$year),
-  aboard = 100
-)
+summary(no_pool_model)
+```
 
-predictions <- add_epred_draws(new_data, model1) %>%
-  mutate(fatality_rate = .epred / aboard)
+### Posterior Predictive Checks
 
-ggplot(predictions, aes(x = year, y = fatality_rate)) +
-  stat_lineribbon(.width = c(0.95, 0.80), alpha = 0.5) +
-  geom_point(data = crashes, 
-             aes(y = fatality_rate), 
-             alpha = 0.2, size = 0.8) +
+```{r}
+#| label: model1 fit check
+
+# Check model fit
+pp_check(no_pool_model, ndraws = 100)
+```
+
+### Visualize Predictions
+
+```{r}
+#| label: model1 visualisation
+#| fig-width: 14
+#| fig-height: 10
+
+# Select top manufacturers for visualization
+top_manufacturers <- crashes %>%
+  count(aircraft_manufacturer, sort = TRUE) %>%
+  slice_head(n = 9) %>%
+  pull(aircraft_manufacturer)
+
+# Create prediction data for these manufacturers
+pred_data <- expand_grid(
+  aircraft_manufacturer = top_manufacturers,
+  year_scaled = seq(min(crashes$year_scaled), 
+                    max(crashes$year_scaled), 
+                    length.out = 100)
+) %>%
+  mutate(aboard = round(mean(crashes$aboard)))
+
+# Generate predictions (these are expected counts of fatalities)
+predictions <- pred_data %>%
+  add_epred_draws(no_pool_model, ndraws = 1000) %>%
+  mutate(.epred_rate = .epred / aboard)  # Convert to rate for plotting
+
+# Plot predictions with uncertainty, faceted by manufacturer
+ggplot() +
+  stat_lineribbon(
+    data = predictions,
+    aes(x = year_scaled, y = .epred_rate),
+    .width = c(0.50, 0.80, 0.95),
+    alpha = 0.5
+  ) +
+  geom_point(
+    data = crashes %>% filter(aircraft_manufacturer %in% top_manufacturers),
+    aes(x = year_scaled, y = fatality_rate),
+    alpha = 0.2,
+    size = 1
+  ) +
+  facet_wrap(~ aircraft_manufacturer, scales = "free_y", ncol = 3) +
   scale_fill_brewer(palette = "Blues") +
   labs(
-    x = "Year",
-    y = "Predicted Fatality Rate",
-    fill = "Credible Interval",
-    title = "Fatality Rate Trend Over Time"
-  )
+    title = "No Pooling Model: Manufacturer-Specific Fatality Rates",
+    subtitle = "Each manufacturer has independent intercept and slope (top 9 by crash count)",
+    x = "Year (Standardized)",
+    y = "Fatality Rate",
+    fill = "Credible Interval"
+  ) +
+  theme_minimal()
 ```
 
-## Model 1 Diagnostics
+### Extract and Interpret Coefficients
 
 ```{r}
-#| label: model1-diagnostics
-#| fig-width: 10
-#| fig-height: 6
-
-# Posterior predictive check
-pp_check(model1, ndraws = 100, type = "dens_overlay") +
-  labs(title = "Posterior Predictive Check: Model 1")
-
-# Trace plots for key parameters
-mcmc_plot(model1, type = "trace", variable = c("b_Intercept", "b_year_scaled"))
-```
-
-## Model 1 Results
-
-```{r}
-#| label: model1-results
-#| fig-width: 10
-#| fig-height: 5
+#| label: model1 interpretation
 
 # Extract posterior samples
-posterior1 <- as_draws_df(model1)
+posterior_samples <- as_draws_df(no_pool_model)
 
-# Plot coefficient estimates
-posterior1 %>%
-  select(b_Intercept, b_year_scaled) %>%
+# Get coefficient names
+coef_names <- colnames(posterior_samples)[grep("^b_", colnames(posterior_samples))]
+
+# Summarize all coefficients
+posterior_samples %>%
+  select(all_of(coef_names)) %>%
   pivot_longer(everything(), names_to = "parameter", values_to = "value") %>%
-  ggplot(aes(x = value, y = parameter)) +
-  stat_halfeye() +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
-  labs(title = "Posterior Distributions: Model 1",
-       x = "Parameter Value", y = "Parameter")
+  group_by(parameter) %>%
+  summarise(
+    mean = mean(value),
+    sd = sd(value),
+    q025 = quantile(value, 0.025),
+    q975 = quantile(value, 0.975),
+    .groups = "drop"
+  ) %>%
+  arrange(mean)
 
-# Interpret the year effect on probability scale
-cat("\nFatality Rate Predictions:\n")
-cat("==========================\n")
+# Convert manufacturer intercepts to probability scale for interpretation
+# Extract just the main effects (intercepts) for top manufacturers
+manuf_intercepts <- posterior_samples %>%
+  select(starts_with("b_aircraft_manufacturer")) %>%
+  select(!ends_with("year_scaled")) %>%
+  pivot_longer(everything(), names_to = "manufacturer", values_to = "logit_value") %>%
+  mutate(
+    manufacturer = str_remove(manufacturer, "^b_aircraft_manufacturer"),
+    probability = plogis(logit_value)
+  ) %>%
+  group_by(manufacturer) %>%
+  summarise(
+    mean_fatality_rate = mean(probability),
+    q025 = quantile(probability, 0.025),
+    q975 = quantile(probability, 0.975),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(mean_fatality_rate))
 
-# Calculate predicted rates for specific years
-years_of_interest <- c(1975, 2000, 2010, 2020)
-predictions_df <- data.frame()
-
-for (yr in years_of_interest) {
-  yr_scaled <- (yr - mean(crashes$year)) / sd(crashes$year)
-  pred_rates <- plogis(posterior1$b_Intercept + posterior1$b_year_scaled * yr_scaled)
-  
-  cat(sprintf("\nYear %d:\n", yr))
-  cat(sprintf("  Mean fatality rate: %.1f%%\n", 100 * mean(pred_rates)))
-  cat(sprintf("  95%% CI: [%.1f%%, %.1f%%]\n", 
-              100 * quantile(pred_rates, 0.025),
-              100 * quantile(pred_rates, 0.975)))
-}
+print(manuf_intercepts)
 ```
+
+### Model Interpretation
+
+The no-pooling model assumes:
+- Each manufacturer has its own independent fatality rate pattern
+- No information is shared between manufacturers (no pooling)
+- Temporal trends vary by manufacturer
+- This provides maximum flexibility but requires sufficient data per manufacturer
+- Comparison point: shows what the data suggests when we allow complete independence
