@@ -39,7 +39,7 @@ no_pool_model <- brm(
   warmup = 1000,
   cores = 4,
   seed = 123,
-  backend = "cmdstanr",
+  backend = "rstan",
   refresh = 0
 )
 ```
