@@ -13,9 +13,9 @@ We address these questions using hierarchical Bayesian modeling of fatality rate
 
 ## Non-Hierarchical Models
 ::: {layout-ncol=2}
-![Non-Hierarchical Model (no pooling)](images/non-hierarchical_model.png){#fig-model-non-hierarchical}
+![Non-Hierarchical Model (no pooling)](images/non-hierarchical_model_no_pooling.png){#fig-model-non-hierarchical}
 
-![Non-Hierarchical Model (complete pooling)](images/non-hierarchical_model_pooling.png){#fig-model-non-hierarchical_pooling}
+![Non-Hierarchical Model (complete pooling)](images/non-hierarchical_model_complete_pooling.png){#fig-model-non-hierarchical_pooling}
 :::
 
 - Non-hierarchical models fit parameters for each opservation seperately
