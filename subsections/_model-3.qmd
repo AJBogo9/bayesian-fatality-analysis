@@ -1,41 +1,24 @@
 ```{r}
-#| label: partial_pool_model-prep
-
-# Check what we have now
-manufacturer_summary <- crashes_filtered %>%
-  count(aircraft_manufacturer, sort = TRUE)
-
-cat("Filtered Manufacturer Distribution:\n")
-cat("====================================\n")
-print(manufacturer_summary)
-cat(sprintf("\nManufacturers: %d (down from 633)\n", nrow(manufacturer_summary)))
-cat(sprintf("Crashes retained: %d out of %d (%.1f%%)\n", 
-            nrow(crashes_filtered), 
-            nrow(crashes),
-            100 * nrow(crashes_filtered) / nrow(crashes)))
-```
-
-```{r}
 #| label: partial_pool_model
 #| cache: true
 
-# Specify hierarchical model with filtered manufacturers
 partial_pool_model <- brm(
-  fatalities | trials(aboard) ~ year_scaled + (1 | aircraft_manufacturer),
-  data = crashes_filtered,  # Use filtered data
+  fatalities | trials(aboard) ~ year_scaled + (year_scaled | aircraft_manufacturer),
+  data = crashes,
   family = binomial(link = "logit"),
   prior = c(
-    prior(normal(1.4, 1), class = Intercept),
-    prior(normal(0, 0.5), class = b),
-    prior(normal(0, 0.6), class = sd) # brms uses halfnormal for sd class 
+    prior(normal(1.4, 1), class = Intercept),      # Well-matched to data
+    prior(normal(0, 0.5), class = b, coef = year_scaled),  # Weakly informative for trend
+    prior(exponential(1), class = sd),              # Regularizes group variation
+    prior(lkj(2), class = cor)                      # Weakly regularizes correlation
   ),
   chains = 4,
   iter = 2000,
   warmup = 1000,
   cores = 4,
   seed = 123,
-  control = list(adapt_delta = 0.90),  # Can lower this now
-  backend = "cmdstanr",
+  control = list(adapt_delta = 0.95),
+  backend = "rstan",
   refresh = 0
 )
 
