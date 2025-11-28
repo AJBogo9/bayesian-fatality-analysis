@@ -11,7 +11,7 @@ We'll fit separate binomial models per manufacturer using fixed effects. This ap
 - Uses the same binomial family and logit link as other models
 
 ```{r}
-#| label: model1
+#| label: no_pool_model
 #| cache: true
 
 # Check the data structure
@@ -47,7 +47,7 @@ no_pool_model <- brm(
 ### Model Summary
 
 ```{r}
-#| label: model1 summary
+#| label: no_pool_model summary
 
 summary(no_pool_model)
 ```
@@ -55,7 +55,7 @@ summary(no_pool_model)
 ### Posterior Predictive Checks
 
 ```{r}
-#| label: model1 fit check
+#| label: no_pool_model fit check
 
 # Check model fit
 pp_check(no_pool_model, ndraws = 100)
@@ -64,7 +64,7 @@ pp_check(no_pool_model, ndraws = 100)
 ### Visualize Predictions
 
 ```{r}
-#| label: model1 visualisation
+#| label: no_pool_model visualisation
 #| fig-width: 14
 #| fig-height: 10
 
@@ -117,7 +117,7 @@ ggplot() +
 ### Extract and Interpret Coefficients
 
 ```{r}
-#| label: model1 interpretation
+#| label: no_pool_model interpretation
 
 # Extract posterior samples
 posterior_samples <- as_draws_df(no_pool_model)

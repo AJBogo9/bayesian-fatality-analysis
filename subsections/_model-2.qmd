@@ -11,7 +11,7 @@ We'll model the fatality rate using a binomial model with logit link. This appro
 - More appropriate for count data than beta regression
 
 ```{r}
-#| label: model2
+#| label: complete_pool_model
 #| cache: true
 
 # Check the data structure
@@ -45,7 +45,7 @@ complete_pool_model <- brm(
 ### Model Summary
 
 ```{r}
-#| label: model2 summary
+#| label: complete_pool_model summary
 
 summary(complete_pool_model)
 ```
@@ -53,7 +53,7 @@ summary(complete_pool_model)
 ### Posterior Predictive Checks
 
 ```{r}
-#| label: model2 fit check
+#| label: complete_pool_model fit check
 
 # Check model fit
 pp_check(complete_pool_model, ndraws = 100)
@@ -62,7 +62,7 @@ pp_check(complete_pool_model, ndraws = 100)
 ### Visualize Predictions
 
 ```{r}
-#| label: model2 visualisation
+#| label: complete_pool_model visualisation
 
 # Create prediction data
 # For binomial models, we need to specify the number of trials
@@ -108,7 +108,7 @@ ggplot() +
 ### Extract and Interpret Coefficients
 
 ```{r}
-#| label: model2 interpretation
+#| label: complete_pool_model interpretation
 
 # Extract posterior samples
 posterior_samples <- as_draws_df(complete_pool_model)
