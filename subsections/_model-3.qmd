@@ -7,10 +7,10 @@ partial_pool_model <- brm(
   data = crashes,
   family = binomial(link = "logit"),
   prior = c(
-    prior(normal(1.4, 1), class = Intercept),      # Well-matched to data
-    prior(normal(0, 0.5), class = b, coef = year_scaled),  # Weakly informative for trend
-    prior(exponential(1), class = sd),              # Regularizes group variation
-    prior(lkj(2), class = cor)                      # Weakly regularizes correlation
+    prior(normal(1.4, 1), class = Intercept),
+    prior(normal(0, 0.5), class = b, coef = year_scaled),
+    prior(exponential(1), class = sd),
+    prior(lkj(2), class = cor)
   ),
   chains = 4,
   iter = 2000,
