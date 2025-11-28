@@ -2,16 +2,31 @@
 #| label: setup
 #| include: false
 
-library(tidyverse)
-library(brms)
-library(bayesplot)
-library(loo)
-library(posterior)
-library(skimr)
-library(knitr)
-library(patchwork)
-library(ggdist)
-library(tidybayes)
+# List of required packages
+required_packages <- c("tidyverse", "brms", "bayesplot", "loo", "posterior",
+                       "skimr", "knitr", "patchwork", "ggdist", "tidybayes")
+
+# Check which packages are not installed
+missing_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+
+# Install missing packages
+if(length(missing_packages) > 0) {
+  install.packages(missing_packages)
+}
+
+# Load all packages
+for(pkg in required_packages) {
+  library(pkg, character.only = TRUE)
+}
+
+# Setup cmdstan in home directory
+# USED FOR JUPYTER HUB SETUP!
+# cmdstan_path <- path.expand("~/.cmdstan/cmdstan-2.37.0")
+# if(!dir.exists(cmdstan_path)) {
+#   cmdstanr::install_cmdstan(dir = "~/.cmdstan")
+# } else {
+#   cmdstanr::set_cmdstan_path(cmdstan_path)
+# }
 
 # plotting theme
 theme_set(theme_minimal())
