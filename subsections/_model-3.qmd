@@ -1,128 +1,57 @@
 
 ```{r}
-#| label: model3
+#| label: partial_pool_model
 #| cache: true
 
 hierarchical_formula <- bf(
-  fatalities | trials(aboard) ~ year_scaled + (1 | aircraft_manufacturer),
+  fatalities | trials(aboard) ~ year_scaled + (year_scaled | aircraft_manufacturer),
   family = binomial(link = "logit")
   )
 
 priors <- c(
     prior(normal(1.4, 1), class = Intercept),
     prior(normal(0, 0.5), class = b),
-    prior(normal(0, 0.6), class = sd) # brms uses halfnormal automatically for sd class 
+    prior(normal(0, 0.6), class = sd), # brms uses halfnormal automatically for sd 
+    prior(lkj(2), class = cor)
   )
 
 # Specify hierarchical model with filtered manufacturers
-model3 <- brm(
+partial_pool_model <- brm(
   formula = hierarchical_formula,
   prior = priors,
   data = crashes,
   seed = 42,
-  control = list(adapt_delta = 0.90),  # Can lower this now
+  control = list(adapt_delta = 0.95),  # Can lower this now
   refresh = 0,
   cores = 4
 )
-
-summary(model3)
 ```
 
 ## Model 3 Diagnostics
 
 ```{r}
-#| label: model3-diagnostics
+#| label: partial_pool_convergence
 #| fig-width: 10
 #| fig-height: 6
+
+# Convergence diagnostics summary
+summary(partial_pool_model)
+
+# Trace plots for key parameters
+mcmc_plot(partial_pool_model, type = "trace", 
+          variable = c("b_Intercept", "b_year_scaled", 
+                      "sd_aircraft_manufacturer__Intercept",
+                      "sd_aircraft_manufacturer__year_scaled"))
+```
+
+```{r}
+#| label: partial_pool_ppc
+#| fig-width: 8
+#| fig-height: 5
 
 # Posterior predictive check
-pp_check(model3, ndraws = 100, type = "dens_overlay") +
-  labs(title = "Posterior Predictive Check: Model 3 (Manufacturer)")
-
-# Trace plots
-mcmc_plot(model3, type = "trace", 
-          variable = c("b_Intercept", "b_year_scaled", "sd_aircraft_manufacturer__Intercept"))
-```
-
-## Model 3 Results
-
-```{r}
-#| label: model3-results
-#| fig-width: 10
-#| fig-height: 8
-
-# Extract random effects
-ranef_model3 <- ranef(model3)
-
-# Get manufacturer effects
-manufacturer_effects <- ranef_model3$aircraft_manufacturer %>%
-  as.data.frame() %>%
-  rownames_to_column("manufacturer") %>%
-  arrange(Estimate.Intercept)
-
-# Plot all manufacturers
-manufacturer_effects %>%
-  mutate(manufacturer = fct_reorder(manufacturer, Estimate.Intercept)) %>%
-  ggplot(aes(x = Estimate.Intercept, y = manufacturer)) +
-  geom_point(size = 3) +
-  geom_errorbarh(aes(xmin = Q2.5.Intercept, xmax = Q97.5.Intercept), height = 0.2) +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
-  labs(title = "Manufacturer-Specific Fatality Rate Deviations",
-       subtitle = "Deviations from overall mean fatality rate",
-       x = "Deviation from Mean (logit scale)", 
-       y = "Manufacturer") +
-  theme_minimal()
-
-# Compare fixed effects
-posterior3 <- as_draws_df(model3)
-
-posterior3 %>%
-  select(b_Intercept, b_year_scaled) %>%
-  pivot_longer(everything(), names_to = "parameter", values_to = "value") %>%
-  ggplot(aes(x = value, y = parameter)) +
-  stat_halfeye() +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
-  labs(title = "Posterior Distributions: Model 3 (Fixed Effects)",
-       x = "Parameter Value", y = "Parameter")
-```
-
-## Visualize Group-Level Variation
-
-```{r}
-#| label: model3-variation
-#| fig-width: 10
-#| fig-height: 6
-
-# Extract group-level SD
-sd_manufacturer <- posterior3 %>%
-  select(sd_aircraft_manufacturer__Intercept) %>%
-  pull()
-
-# Plot distribution
-data.frame(sd = sd_manufacturer) %>%
-  ggplot(aes(x = sd)) +
-  stat_halfeye() +
-  labs(title = "Group-Level Standard Deviation",
-       subtitle = "Variation in fatality rates across manufacturers",
-       x = "Standard Deviation (logit scale)", y = "Density")
-
-# Summary statistics
-cat("Group-level SD:\n",
-    sprintf("Mean: %.3f\n", mean(sd_manufacturer)),
-    sprintf("Median: %.3f\n", median(sd_manufacturer)),
-    sprintf("95%% CI: [%.3f, %.3f]\n", 
-            quantile(sd_manufacturer, 0.025), 
-            quantile(sd_manufacturer, 0.975)),
-    sep = "")
-
-# Interpret
-baseline_rate <- plogis(0)
-low_manufacturer <- plogis(-2 * mean(sd_manufacturer))
-high_manufacturer <- plogis(2 * mean(sd_manufacturer))
-
-cat(sprintf("\nImplied fatality rate range (±2 SD):\n"),
-    sprintf("Baseline: %.1f%%\n", 100 * baseline_rate),
-    sprintf("Safe manufacturer (-2 SD): %.1f%%\n", 100 * low_manufacturer),
-    sprintf("Dangerous manufacturer (+2 SD): %.1f%%\n", 100 * high_manufacturer),
-    sep = "")
+pp_check(partial_pool_model, ndraws = 100, type = "dens_overlay") +
+  labs(title = "Posterior Predictive Check: Partial Pooling Model",
+       x = "Number of Fatalities",
+       y = "Density")
 ```

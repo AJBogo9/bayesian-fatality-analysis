@@ -39,7 +39,7 @@ execute:
 
 # Model comparison
 
-- with LOO-CV?
+{{< include subsections/_model-comparison.qmd >}}
 
 # Discussion
 

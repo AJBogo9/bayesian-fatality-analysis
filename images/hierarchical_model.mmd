@@ -1,0 +1,27 @@
+graph TD
+    subgraph "global parameter"
+        B0[β_global]
+    end
+
+    subgraph "parameters"
+        B1[β₁]
+        B2[β₂]
+        B3[...]
+        Bk[βₖ]
+    end
+    
+    subgraph "observations"
+        Y1[y₁]
+        Y2[y₂]
+        Y3[...]
+        Yk[yₖ]
+    end
+    
+    B0 --> B1
+    B0 --> B2
+    B0 --> B3
+    B0 --> Bk
+    B1 --> Y1
+    B2 --> Y2
+    B3 --> Y3
+    Bk --> Yk

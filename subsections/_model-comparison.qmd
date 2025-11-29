@@ -1,0 +1,10 @@
+```{r}
+#| label: model-comparison
+
+no_pool_loo <- loo(no_pool_model)
+complete_pool_loo <- loo(complete_pool_model)
+partial_pool_loo <- loo(partial_pool_model)
+
+# Compare models
+loo_compare(no_pool_loo, complete_pool_loo, partial_pool_loo)
+```
