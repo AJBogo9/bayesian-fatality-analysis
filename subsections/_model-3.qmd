@@ -1,42 +1,28 @@
-```{r}
-#| label: model3-prep
-
-# Check what we have now
-manufacturer_summary <- crashes_filtered %>%
-  count(aircraft_manufacturer, sort = TRUE)
-
-cat("Filtered Manufacturer Distribution:\n")
-cat("====================================\n")
-print(manufacturer_summary)
-cat(sprintf("\nManufacturers: %d (down from 633)\n", nrow(manufacturer_summary)))
-cat(sprintf("Crashes retained: %d out of %d (%.1f%%)\n", 
-            nrow(crashes_filtered), 
-            nrow(crashes),
-            100 * nrow(crashes_filtered) / nrow(crashes)))
-```
 
 ```{r}
 #| label: model3
 #| cache: true
 
-# Specify hierarchical model with filtered manufacturers
-model3 <- brm(
+hierarchical_formula <- bf(
   fatalities | trials(aboard) ~ year_scaled + (1 | aircraft_manufacturer),
-  data = crashes_filtered,  # Use filtered data
-  family = binomial(link = "logit"),
-  prior = c(
+  family = binomial(link = "logit")
+  )
+
+priors <- c(
     prior(normal(1.4, 1), class = Intercept),
     prior(normal(0, 0.5), class = b),
-    prior(normal(0, 0.6), class = sd) # brms uses halfnormal for sd class 
-  ),
-  chains = 4,
-  iter = 2000,
-  warmup = 1000,
-  cores = 4,
-  seed = 123,
+    prior(normal(0, 0.6), class = sd) # brms uses halfnormal automatically for sd class 
+  )
+
+# Specify hierarchical model with filtered manufacturers
+model3 <- brm(
+  formula = hierarchical_formula,
+  prior = priors,
+  data = crashes,
+  seed = 42,
   control = list(adapt_delta = 0.90),  # Can lower this now
-  backend = "cmdstanr",
-  refresh = 0
+  refresh = 0,
+  cores = 4
 )
 
 summary(model3)

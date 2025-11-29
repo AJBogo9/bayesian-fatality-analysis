@@ -27,20 +27,22 @@ crashes %>%
 
 # Fit no-pooling model with separate intercept and slope per manufacturer
 # Using 0 to remove the global intercept, then add manufacturer-specific intercepts
+no_pool_formula <- bf(
+	fatalities | trials(aboard) ~ 0 + aircraft_manufacturer + aircraft_manufacturer:year_scaled,
+	family = binomial(link = "logit")
+	)
+
+priors <- c(
+		prior(normal(0, 1), class = b) # Weakly informative prior for all
+		)
+
 no_pool_model <- brm(
-  fatalities | trials(aboard) ~ 0 + aircraft_manufacturer + aircraft_manufacturer:year_scaled,
-  data = crashes,
-  family = binomial(link = "logit"),
-  prior = c(
-    prior(normal(0, 1), class = b)
-  ),
-  chains = 4,
-  iter = 2000,
-  warmup = 1000,
-  cores = 4,
-  seed = 123,
-  backend = "cmdstanr",
-  refresh = 0
+	formula = no_pool_formula,
+	prior = priors,
+  	data = crashes,
+	seed = 42,
+	refresh = 0,
+	cores = 4
 )
 ```
 

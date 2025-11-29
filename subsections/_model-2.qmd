@@ -23,22 +23,24 @@ crashes %>%
     max_rate = max(fatality_rate)
   )
 
+complete_pool_formula <- bf(
+  fatalities | trials(aboard) ~ 1 + year_scaled,
+  family = binomial(link = "logit")
+  )
+
+priors <- c(
+  prior(normal(1.4, 1), class = Intercept),
+  prior(normal(0, 0.5), class = b)
+  )
+
 # Fit complete pooling model with binomial family
 complete_pool_model <- brm(
-  fatalities | trials(aboard) ~ 1 + year_scaled,
+  formula = complete_pool_formula,
+  prior = priors,
   data = crashes,
-  family = binomial(link = "logit"),
-  prior = c(
-    prior(normal(1.4, 1), class = Intercept),
-    prior(normal(0, 0.5), class = b)
-  ),
-  chains = 4,
-  iter = 2000,
-  warmup = 1000,
-  cores = 4,
-  seed = 123,
-  backend = "cmdstanr",
-  refresh = 0
+  seed = 42,
+  refresh = 0,
+  cores = 4
 )
 ```
 
