@@ -35,7 +35,7 @@ execute:
 {{< include subsections/_no-pooling-model.qmd >}}
 
 # Partial pooling (hierarchical model)
-{{< include subsections/_partial-pooling-model-3.qmd >}}
+{{< include subsections/_partial-pooling-model.qmd >}}
 
 # Model comparison
 
