@@ -60,7 +60,11 @@ summary(no_pool_model)
 #| label: no_pool_model fit check
 
 # Check model fit
-pp_check(no_pool_model, ndraws = 100)
+pp_check(no_pool_model)
+pp_check(no_pool_model, type = "scatter_avg", group = "aircraft_manufacturer")
+pp_check(no_pool_model, type = "stat", stat = "mean")
+pp_check(no_pool_model, type = "stat", stat = "sd")
+
 ```
 
 ### Visualize Predictions

@@ -4,7 +4,7 @@
 #| cache: true
 
 hierarchical_formula <- bf(
-  fatalities | trials(aboard) ~ year_scaled + (year_scaled | aircraft_manufacturer),
+  fatalities | trials(aboard) ~ 1 + year_scaled + (1 + year_scaled | aircraft_manufacturer),
   family = binomial(link = "logit")
   )
 
