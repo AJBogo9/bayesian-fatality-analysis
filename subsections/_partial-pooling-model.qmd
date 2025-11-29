@@ -19,7 +19,7 @@ priors <- c(
 partial_pool_model <- brm(
   formula = hierarchical_formula,
   prior = priors,
-  data = crashes,
+  data = crashes_filtered,
   seed = 42,
   control = list(adapt_delta = 0.95),  # Can lower this now
   refresh = 0,

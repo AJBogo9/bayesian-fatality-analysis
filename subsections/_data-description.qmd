@@ -189,39 +189,47 @@ ggsave("figures/fatality-rate-trend.pdf", fig6, width = 5, height = 3.5)
 
 
 To conduct a modern analysis on plane crash fatalities, we do not want to include observations from far back in the history. We need some reasonable cutoff point that keeps sufficient amount of data and allows us to model modern aircraft data. The fatalities trend shows a turning point at around 1975 so it is reasonable to choose that as our observation cutoff year. 
+
 ```{r}
+#| label: filtered-data-summary
+
 len_before <- nrow(crashes)
-crashes <- crashes %>% filter(year > 1975)
-len_after <- nrow(crashes)
+crashes_filtered <- crashes %>% filter(year > 1975)
+len_after <- nrow(crashes_filtered)
 
 cat("Observations before filtering:", len_before, "\n")
 cat("Observations after filtering:", len_after, "\n")
 cat("Rows removed:", len_before - len_after, "\n")
 ```
+
 Keep only manufacturers where we have data for over 10 crashes
+
 ```{r}
-len_before <- nrow(crashes)
-n_manufacturers_before <- n_distinct(crashes$aircraft_manufacturer)
+#| label: manufacturer-filtering
+
+len_before <- nrow(crashes_filtered)
+n_manufacturers_before <- n_distinct(crashes_filtered$aircraft_manufacturer)
 
 min_crashes <- 10
-crashes <- crashes %>%
+crashes_filtered <- crashes_filtered %>%
   group_by(aircraft_manufacturer) %>%
   filter(n() >= min_crashes) %>%
   ungroup()
 
-len_after <- nrow(crashes)
-n_manufacturers_after <- n_distinct(crashes$aircraft_manufacturer)
+len_after <- nrow(crashes_filtered)
+n_manufacturers_after <- n_distinct(crashes_filtered$aircraft_manufacturer)
 
 cat("Observations before filtering:", len_before, "\n")
 cat("Observations after filtering:", len_after, "\n")
 cat("Rows removed:", len_before - len_after, "\n")
 cat("Manufacturers before filtering:", n_manufacturers_before, "\n")
 cat("Manufacturers after filtering:", n_manufacturers_after, "\n")
-
 ```
 
 ```{r}
-crashes %>%
+#| label: filtered-data-numeric-summary
+
+crashes_filtered %>%
   select(where(is.numeric)) %>%
   skim()
 ```
@@ -234,7 +242,7 @@ crashes %>%
 #| fig-height: 8
 
 # Compute empirical fatality rates by manufacturer (≥10 crashes)
-empirical_rates <- crashes %>%
+empirical_rates <- crashes_filtered %>%
   group_by(aircraft_manufacturer) %>%
   summarise(
     mean_rate = mean(fatality_rate, na.rm = TRUE),
@@ -255,10 +263,16 @@ empirical_rates %>%
   ggplot(aes(x = mean_rate, y = aircraft_manufacturer)) +
   geom_point(size = 3) +
   geom_errorbarh(aes(xmin = lower_ci, xmax = upper_ci), height = 0.2) +
-  geom_vline(xintercept = mean(crashes$fatality_rate), linetype = "dashed", color = "red") +
-  labs(title = "Empirical Fatality Rates by Manufacturer",
-       subtitle = "Data only (no pooling); dashed line = overall mean",
-       x = "Fatality Rate", 
-       y = "Manufacturer") +
+  geom_vline(
+    xintercept = mean(crashes_filtered$fatality_rate), 
+    linetype = "dashed", 
+    color = "red"
+  ) +
+  labs(
+    title = "Empirical Fatality Rates by Manufacturer",
+    subtitle = "Data only (no pooling); dashed line = overall mean",
+    x = "Fatality Rate", 
+    y = "Manufacturer"
+  ) +
   theme_minimal()
 ```

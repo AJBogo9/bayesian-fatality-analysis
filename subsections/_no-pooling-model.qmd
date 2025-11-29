@@ -15,7 +15,7 @@ We'll fit separate binomial models per manufacturer using fixed effects. This ap
 #| cache: true
 
 # Check the data structure
-crashes %>%
+crashes_filtered %>%
   summarise(
     n_manufacturers = n_distinct(aircraft_manufacturer),
     n_crashes = n(),
@@ -39,7 +39,7 @@ priors <- c(
 no_pool_model <- brm(
 	formula = no_pool_formula,
 	prior = priors,
-  data = crashes,
+  data = crashes_filtered,
 	seed = 42,
 	refresh = 0,
 	cores = 4
@@ -75,7 +75,7 @@ pp_check(no_pool_model, type = "stat", stat = "sd")
 #| fig-height: 10
 
 # Select top manufacturers for visualization
-top_manufacturers <- crashes %>%
+top_manufacturers <- crashes_filtered %>%
   count(aircraft_manufacturer, sort = TRUE) %>%
   slice_head(n = 9) %>%
   pull(aircraft_manufacturer)
@@ -83,11 +83,11 @@ top_manufacturers <- crashes %>%
 # Create prediction data for these manufacturers
 pred_data <- expand_grid(
   aircraft_manufacturer = top_manufacturers,
-  year_scaled = seq(min(crashes$year_scaled), 
-                    max(crashes$year_scaled), 
+  year_scaled = seq(min(crashes_filtered$year_scaled), 
+                    max(crashes_filtered$year_scaled), 
                     length.out = 100)
 ) %>%
-  mutate(aboard = round(mean(crashes$aboard)))
+  mutate(aboard = round(mean(crashes_filtered$aboard)))
 
 # Generate predictions (these are expected counts of fatalities)
 predictions <- pred_data %>%
@@ -103,7 +103,7 @@ ggplot() +
     alpha = 0.5
   ) +
   geom_point(
-    data = crashes %>% filter(aircraft_manufacturer %in% top_manufacturers),
+    data = crashes_filtered %>% filter(aircraft_manufacturer %in% top_manufacturers),
     aes(x = year_scaled, y = fatality_rate),
     alpha = 0.2,
     size = 1

@@ -15,7 +15,7 @@ We'll model the fatality rate using a binomial model with logit link. This appro
 #| cache: true
 
 # Check the data structure
-crashes %>%
+crashes_filtered %>%
   summarise(
     n_zeros = sum(fatalities == 0),
     n_all_died = sum(fatalities == aboard),
@@ -37,7 +37,7 @@ priors <- c(
 complete_pool_model <- brm(
   formula = complete_pool_formula,
   prior = priors,
-  data = crashes,
+  data = crashes_filtered,
   seed = 42,
   refresh = 0,
   cores = 4
@@ -70,10 +70,10 @@ pp_check(complete_pool_model, ndraws = 100)
 # For binomial models, we need to specify the number of trials
 # We'll use the mean number aboard as a reference point
 pred_data <- tibble(
-  year_scaled = seq(min(crashes$year_scaled), 
-                    max(crashes$year_scaled), 
+  year_scaled = seq(min(crashes_filtered$year_scaled), 
+                    max(crashes_filtered$year_scaled), 
                     length.out = 100),
-  aboard = round(mean(crashes$aboard))  # Use mean as reference
+  aboard = round(mean(crashes_filtered$aboard))  # Use mean as reference
 )
 
 # Generate predictions (these are expected counts of fatalities)
@@ -90,7 +90,7 @@ ggplot() +
     alpha = 0.5
   ) +
   geom_point(
-    data = crashes,
+    data = crashes_filtered,
     aes(x = year_scaled, y = fatality_rate),
     alpha = 0.2,
     size = 1
@@ -99,7 +99,7 @@ ggplot() +
   labs(
     title = "Complete Pooling Model: Fatality Rate Over Time",
     subtitle = paste0("Predictions shown for flights with ", 
-                     round(mean(crashes$aboard)), " people aboard (mean)"),
+                     round(mean(crashes_filtered$aboard)), " people aboard (mean)"),
     x = "Year (Standardized)",
     y = "Fatality Rate",
     fill = "Credible Interval"
