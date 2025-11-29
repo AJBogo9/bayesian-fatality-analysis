@@ -39,7 +39,7 @@ priors <- c(
 no_pool_model <- brm(
 	formula = no_pool_formula,
 	prior = priors,
-  	data = crashes,
+  data = crashes,
 	seed = 42,
 	refresh = 0,
 	cores = 4
