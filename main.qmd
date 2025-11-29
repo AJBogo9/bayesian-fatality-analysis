@@ -28,14 +28,14 @@ execute:
 # Data Modeling
 {{< include subsections/_data-modeling.qmd >}}
 
-# Model 1: Non-Hierarchical Beta-Binomial (no pooling)
-{{< include subsections/_model-1.qmd >}}
+# Complete pooling (non-hierarchical model)
+{{< include subsections/_complete-pooling-model.qmd >}}
 
-# Model 2: Non-Hierarchical model (complete pooling)
-{{< include subsections/_model-2.qmd >}}
+# No pooling (non-hierarchical model)
+{{< include subsections/_no-pooling-model.qmd >}}
 
-# Model 3: Hierarchical Model by Manufacturer
-{{< include subsections/_model-3.qmd >}}
+# Partial pooling (hierarchical model)
+{{< include subsections/_partial-pooling-model-3.qmd >}}
 
 # Model comparison
 
