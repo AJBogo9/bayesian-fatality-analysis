@@ -3,12 +3,8 @@ title: "Bayesian Analysis of Aviation Accidents"
 author: "Andreas Bogossian & Markus Kruth"
 bibliography: references.bib
 csl: ieee.csl
+site-url: https://ajbogo9.github.io/bayesian-fatality-analysis
 format:
-  pdf:
-    toc: true
-    number-sections: true
-    colorlinks: true
-    link-citations: true
   html:
     toc: true
     code-fold: true
