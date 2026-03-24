@@ -7,8 +7,6 @@ site-url: https://ajbogo9.github.io/bayesian-fatality-analysis
 format:
   html:
     toc: true
-    code-fold: true
-    code-summary: "Show code"
 execute:
   warning: false
   message: false
