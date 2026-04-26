@@ -1,0 +1,85 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{enumitem}
+\usepackage{xcolor}
+
+% LINK TO INSTRUCTIONS: https://avehtari.github.io/BDA_course_Aalto/project.html
+
+\title{Bayesian Data Analysis Course\\Project Work Instructions}
+\author{Aalto University 2025}
+\date{Published: November 7, 2025}
+
+\begin{document}
+
+\maketitle
+
+\section{Project Report}
+
+In the project report you practice presenting the problem and data analysis results, which means that minimal listing of code and figures is not a good report. There are different levels for how data analysis project could be reported. This report should be more than a summary of results without workflow steps. While describing the steps and decisions made during the workflow, to keep the report readable some of the diagnostic outputs and code can be put in the appendix. If you are uncertain you can ask TAs in TA sessions whether you are on a good level of amount of details.
+
+\textbf{The report should not be over 20 pages.} The report can be much shorter than 20 pages, but as figures can take a lot of space, the upper limit is quite high. There is an upper limit, so that you need to do at least some selection of what to show and specifically don't include all possible output from the inference. If you are uncertain whether your report is containing sufficient information, ask TAs.
+
+\subsection{Report Requirements}
+
+The report should include:
+
+\begin{enumerate}
+    \item \textbf{Introduction} describing:
+    \begin{itemize}
+        \item The motivation
+        \item The problem
+        \item The main modeling idea
+        \item In addition showing some illustrative figure is recommended
+    \end{itemize}
+    
+    \item \textbf{Description of the data and the analysis problem.} Provide information where the data was obtained, and if it has been previously used in some online case study and how your analysis differs from the existing analyses.
+    
+    \item \textbf{Description of at least two models}, for example:
+    \begin{itemize}
+        \item Non-hierarchical and hierarchical
+        \item Linear and non-linear
+        \item Different plausible observation models
+        \item Variable selection with many models
+    \end{itemize}
+    
+    \item \textbf{Informative or weakly informative priors}, and justification of the choice of these priors.
+    
+    \item \textbf{brms, rstanarm, or Stan code.}
+    
+    \item \textbf{How the MCMC inference was run}, that is, what options were used. A good option is to show the command you did run, and a textual explanation of the choice of options.
+    
+    \item \textbf{Convergence diagnostics} ($\hat{R}$, ESS, divergences) value and what can be interpreted from them. What was done if the convergence was not good with the first try. This should be reported for all models.
+    
+    \item \textbf{Posterior predictive checks} and what can be interpreted from them. What was done to improve the model if the checks indicated misspecification. This should be reported for all models.
+    
+    \item \textbf{Optional/Bonus: Predictive performance assessment} if applicable (e.g., classification accuracy) and evaluation of practical usefulness of the accuracy. This should be reported for all models as well.
+    
+    \item \textbf{Sensitivity analysis} with respect to prior choices (i.e., checking whether the result changes a lot if prior is changed). This should be reported for all models.
+    
+    \item \textbf{Model comparison} (e.g., with LOO-CV).
+    
+    \item \textbf{Discussion} of issues and potential improvements.
+    
+    \item \textbf{Conclusion} what was learned from the data analysis.
+    
+    \item \textbf{Self-reflection} of what the group learned while making the project.
+\end{enumerate}
+
+You can check also the FeedbackFruits rubric for the project report.
+
+For guidance on how many digits to report, see Digits notebook.
+
+\section{Model Requirements}
+
+\begin{itemize}
+    \item Every parameter needs to have an explicit proper prior. Improper flat priors are not allowed.
+    \item A hierarchical model is a model where the prior of certain parameter contain other parameters that are also estimated in the model. For instance, $b \sim \text{Normal}(\mu, \sigma)$, $\mu \sim \text{Normal}(0, 1)$, $\sigma \sim \text{Exponential}(1)$.
+    \item Do not impose hard constraints on a parameter unless they are natural to them. $\text{Uniform}(a, b)$ should not be used unless the boundaries are really logical boundaries and values beyond the boundaries are completely impossible.
+    \item At least some models should include covariates. Modelling the outcome without predictors is likely too simple for the project.
+    \item \texttt{brms} or \texttt{rstanarm} is recommended (less time spent for coding the model). \texttt{brms} uses improper flat prior for many parameters, so you need to define proper priors. Report also the proper default priors which you didn't change.
+\end{itemize}
+
+
+\end{document}

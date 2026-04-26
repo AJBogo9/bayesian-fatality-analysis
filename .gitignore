@@ -1,8 +1,9 @@
-# Quarto/R Markdown outputs
-*.pdf
+# Quarto outputs and cache
 *.html
 *_cache/
 *_files/
+/.quarto/
+_site/
 
 # R specific
 .Rproj.user/
@@ -11,9 +12,18 @@
 .Ruserdata
 .RDataTmp
 
-# Other
-*.txt
-main.tex
-/.quarto/
-**/*.quarto_ipynb
-_site/
+# LaTeX build artifacts
+report/build/
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.nav
+*.out
+*.run.xml
+*.snm
+*.synctex.gz
+*.toc

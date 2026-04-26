@@ -1,0 +1,178 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+% LINK TO REQUIREMENTS: https://avehtari.github.io/BDA_course_Aalto/project_rubric.html
+
+
+\title{Bayesian Data Analysis Course\\Project Work Report Rubric 2024}
+\author{}
+\date{Published: November 24, 2025}
+
+\begin{document}
+
+\maketitle
+
+\section*{Instructions}
+For the questions having answer scale from 1 to 5, the explanations are for scores 1, 2, 4, and 5, but you can use also score 3.
+
+\section{Q1: Can you open the pdf/html-file and it's not essentially empty?}
+If the submission is empty or no-effort nonsense contact the course staff.
+\begin{itemize}
+    \item Yes
+\end{itemize}
+
+\section{Q2: Is there an introduction?}
+\begin{itemize}
+    \item 5 = Description is relevant, detailed, and provides convincing motivation for the project
+\end{itemize}
+
+\section{Q3: What are your suggestions on how to improve the introduction?}
+The introduction was quite short. It could have had more explanation on what type of model is being used, not just "we have prior and get posterior".
+
+\section{Q4: Is there a description of the data and the analysis problem?}
+\begin{itemize}
+    \item 5 = Description is relevant, detailed, and provides convincing motivation for the project
+\end{itemize}
+
+\section{Q5: Did you get a sense of what the data is and the analysis problem is when they were first introduced?}
+Where and how might the author make the model description clearer?
+
+Yes, the features in the data were well explained and I understood, that they are trying to model a stroke classification task. Perhaps it could have been commented on, that the data had a lot more "no"s than "yes"s, which could confuse the model.
+
+\section{Q6: Are there descriptions of at least two models?}
+\begin{itemize}
+    \item 5 = All (2+) model descriptions are clearly presented and are reasonable choices for the reported analysis problem
+\end{itemize}
+
+\section{Q7: Did you get a sense of what the models are?}
+Where and how might the author(s) make the model description clearer?
+
+The explanation was concise and mostly clear. Especially for the hierearchical model it could have been explained, what alpha, beta and gamma correspond to, I was a bit confused.
+
+\section{Q8: Are there descriptions and justifications of the prior choices?}
+It is fine to use default brms priors if they are proper (i.e. not for b coefficients)
+\begin{itemize}
+    \item 3
+\end{itemize}
+
+\section{Q9: Did you get a sense of what the priors are?}
+Where and how might the author(s) make the prior description and justification clearer?
+
+The priors were talked about, but really vaguely. The motivation for them was clear, but the reasoning not. Also the exact prior values were shown much later in the report. I would have wanted to see them when the models were explained and the priors motivated.
+
+\section{Q10: Is Stan, rstanarm, or brms model code/formula included?}
+The main report can also show parts of a long code, and the complete model code can be in the appendix if it's mentioned in the main text.
+\begin{itemize}
+    \item 3
+\end{itemize}
+
+\section{Q11: Is there code to show how the model was run so that it's easy to see what options were used?}
+\begin{itemize}
+    \item Yes
+\end{itemize}
+
+\section{Q12: Is Rhat convergence diagnostics and interpretation included?}
+\begin{itemize}
+    \item 5 = Yes, they are provided for all models, with discussion about what can be concluded
+\end{itemize}
+
+\section{Q13: Are HMC specific convergence diagnostics (divergences, tree depth) with interpretation of the results included?}
+\begin{itemize}
+    \item 5 = Yes, they are shown for all models, with discussion about what can be concluded
+\end{itemize}
+
+\section{Q14: Are effective sample size diagnostic (usually denoted with n\_eff or ESS) and an interpretation of the results included?}
+\begin{itemize}
+    \item 4 = Yes, they are included for all models but no discussion what can be concluded from the shown values
+\end{itemize}
+
+\section{Q15: Is there posterior predictive checking and interpretation of the results?}
+\begin{itemize}
+    \item 5 = Yes for all models, with discussion about what can be concluded from the shown checks
+\end{itemize}
+
+\section{Q16: Is there model comparison and interpretation of the results?}
+\begin{itemize}
+    \item 5 = Yes, with discussion about what can be concluded from the comparison
+\end{itemize}
+
+\section{Q17: Question not available. Skip this.}
+Due to FeedbackFruits this question is broken, but to keep the original question numbering, we have not deleted this question. Continue to the next question.
+
+\section{Q18: Is there prior sensitivity analysis?}
+That is, is there any alternative prior tested and reported (or power-scaling sensitivity checks conducted) and whether estimates of quantities of interest changed?
+\begin{itemize}
+    \item 5 = Yes, with discussion about what can be concluded from the sensitivity analysis
+\end{itemize}
+
+\section{Q19: Is there a discussion of problems and potential improvements?}
+The analysis does not need to be perfect. It is ok to have bad models, bad convergence etc, as long as they are acknowledged and discussed.
+\begin{itemize}
+    \item 5 = Clear discussion with relevant, logical, and well-motivated reasons given analysis problem
+\end{itemize}
+
+\section{Q20: Is there a conclusion describing what was learned from the data analysis?}
+\begin{itemize}
+    \item 5 = Conclusion is clear and justified given analysis problem
+\end{itemize}
+
+\section{Q21: Describe in your own words what is the main conclusion of the data analysis in this report?}
+The models succesfully modeled the overall structure of the data, but due to the imbalance in the data, the predictive ability of the models is weak. There was no clear difference between the two models' performance.
+
+\section{Q22: Is there a section of self-reflection about what the group learned while making the project?}
+\begin{itemize}
+    \item There is a self-reflection section
+\end{itemize}
+
+\section{Q23: Accuracy of use of statistical terms}
+\begin{itemize}
+    \item 3 = Statistical terms are used accurately (as far as I, the reviewer, know)
+\end{itemize}
+
+\section{Q24: Were the numbers reported with reasonable number of digits?}
+(Regardless of which specific convention was chosen)
+\begin{itemize}
+    \item No, numbers were reported with unnecessary number of digits
+\end{itemize}
+
+\section{Q25: Was the amount of code output reasonable (i.e. not excessive and irrelevant to the core analysis being performed) in the report?}
+Putting code output to appendix is acceptable.
+\begin{itemize}
+    \item Yes
+\end{itemize}
+
+\section{Q26: Was the main body of the report within the 20 page limit?}
+(Not including appendix, table of contents, title page, references)
+\begin{itemize}
+    \item Yes
+\end{itemize}
+
+\section{Q27: The structure and organization of the report}
+\begin{itemize}
+    \item 4 = The report presents a clear cohesive data analysis story
+\end{itemize}
+
+\section{Q28: Overall, what did you think of the structure and organization of the report?}
+Name at least one way the author(s) could improve the structure and organization.
+
+The overall structure and report narrative were good. However, the middle of the report (chapters 3 and 4) were a bit chaotic. For example, LOO-CV comparison of the models was explained three separate times in the report (chapters 3, 4.4 and 4.6) and the third time used different values than the first two. Also, ppcheck was touched on two separate times (chapters 3 and 4.3).
+
+\section{Q29: Choose something you like about the report and explain why you like it.}
+The model and problem analysis in the report was great. The report did a great job at critically analysing the difficulties in the task and the shortcomings of the models.
+
+\section{Q30: For the oral presentation of this work, what improvements or advice would you give to the author(s) that could feasibly be done in time for the presentation?}
+
+For the presentation, I would recommend to justify the prior choices more deeply.
+
+\section{Q31: If you were to go back and redo your own report after reading this submission, what would you change?}
+
+This report did a great job at explaining things concisely but still precisely. In our report we perhaps used too much time discussing certain things that could have been explained more concisely.
+
+\section{Q32: If the author(s) were to complete this project work again, what could they change, to make it better?}
+
+Proof read the final report for structural mistakes.
+
+\end{document}
