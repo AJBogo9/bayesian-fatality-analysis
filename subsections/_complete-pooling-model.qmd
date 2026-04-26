@@ -1,27 +1,23 @@
 ## Complete Pooling Model
 
-This model treats all plane crashes as coming from a single population, ignoring differences between countries, manufacturers, or time periods.
+With $i$ representing individual crashes, $n_i$ representing the number of people aboard, and $p_i$ representing the fatality probability of a crash, the model is:
 
-### Fit Complete Pooling Model
+$$\begin{align*}
+\text{Likelihood:} \quad & \\
+y_i &\sim \text{Binomial}(n_i, p_i) \\
+\text{logit}(p_i) &= \alpha + \beta \cdot \text{year\_scaled}_i \\[1em]
+\text{Priors:} \quad & \\
+\alpha &\sim \mathcal{N}(1.4,\, 1) \\
+\beta &\sim \mathcal{N}(0,\, 0.5)
+\end{align*}$$
 
-We'll model the fatality rate using a binomial model with logit link. This approach:
-- Naturally handles proportions including 0s and 1s
-- Models fatalities out of total aboard (respects the actual counts)
-- Uses the logit transformation internally
-- More appropriate for count data than beta regression
+The complete pooling model is the simplest of our three models. The model assumes that each manufacturer shares the same intercept and linear coefficient. The weakness of this model is that it is not able to capture the potential differences between the manufacturers.
+
+### Model
 
 ```{r}
 #| label: complete_pool_model
 #| cache: true
-
-# Check the data structure
-crashes_filtered %>%
-  summarise(
-    n_zeros = sum(fatalities == 0),
-    n_all_died = sum(fatalities == aboard),
-    min_rate = min(fatality_rate),
-    max_rate = max(fatality_rate)
-  )
 
 complete_pool_formula <- bf(
   fatalities | trials(aboard) ~ 1 + year_scaled,
@@ -33,55 +29,66 @@ priors <- c(
   prior(normal(0, 0.5), class = b)
   )
 
-# Fit complete pooling model with binomial family
 complete_pool_model <- brm(
   formula = complete_pool_formula,
   prior = priors,
   data = crashes_filtered,
   seed = 42,
   refresh = 0,
-  cores = 4
+  cores = 4,
+  backend = "cmdstanr"
 )
 ```
 
-### Model Summary
+### Convergence Diagnostics
 
 ```{r}
-#| label: complete_pool_model summary
+#| label: complete_pool_model_summary
 
 summary(complete_pool_model)
 ```
 
-### Posterior Predictive Checks
+The $\hat{R}$ value for both the intercept term and the year coefficient is 1.00, indicating almost perfect chain overlapping. For both parameters, the bulk ESS values are over 3000 and the tail ESS values are over 2000. These values are great and definitely sufficient. The model had no divergences.
+
+### Posterior Predictive Check
 
 ```{r}
-#| label: complete_pool_model fit check
+#| label: complete_pool_model_fit_check
+#| fig-width: 12
+#| fig-height: 4
 
-# Check model fit
-pp_check(complete_pool_model, ndraws = 100)
+pp_check(complete_pool_model, ndraws = 100, type = "ecdf_overlay") +
+  labs(title = "Complete Pool — ECDF overlay")
+
+pp_check(complete_pool_model, ndraws = 100, type = "stat", stat = "mean") +
+  labs(title = "Complete Pool — mean comparison")
+
+pp_check(complete_pool_model, ndraws = 100, type = "stat", stat = "sd") +
+  labs(title = "Complete Pool — SD comparison")
 ```
 
-### Visualize Predictions
+The complete pooling model ECDF follows the observed ECDF better at low fatalities than the no pooling model, but it still struggles in the 25–100 fatalities region.
+
+The mean comparison plot shows that the observed mean is almost at the exact center of the model simulated fatalities distribution, meaning that this model also estimates the overall fatality rate correctly.
+
+The standard deviation comparison plot shows that this model is also under-dispersed, but the effect is smaller than with the no pooling model.
+
+### Predictions Over Time
 
 ```{r}
-#| label: complete_pool_model visualisation
+#| label: complete_pool_model_visualisation
 
-# Create prediction data
-# For binomial models, we need to specify the number of trials
-# We'll use the mean number aboard as a reference point
 pred_data <- tibble(
-  year_scaled = seq(min(crashes_filtered$year_scaled), 
-                    max(crashes_filtered$year_scaled), 
+  year_scaled = seq(min(crashes_filtered$year_scaled),
+                    max(crashes_filtered$year_scaled),
                     length.out = 100),
-  aboard = round(mean(crashes_filtered$aboard))  # Use mean as reference
+  aboard = round(mean(crashes_filtered$aboard))
 )
 
-# Generate predictions (these are expected counts of fatalities)
 predictions <- pred_data %>%
   add_epred_draws(complete_pool_model, ndraws = 1000) %>%
-  mutate(.epred_rate = .epred / aboard)  # Convert to rate for plotting
+  mutate(.epred_rate = .epred / aboard)
 
-# Plot predictions with uncertainty
 ggplot() +
   stat_lineribbon(
     data = predictions,
@@ -98,49 +105,26 @@ ggplot() +
   scale_fill_brewer(palette = "Blues") +
   labs(
     title = "Complete Pooling Model: Fatality Rate Over Time",
-    subtitle = paste0("Predictions shown for flights with ", 
+    subtitle = paste0("Predictions for flights with ",
                      round(mean(crashes_filtered$aboard)), " people aboard (mean)"),
     x = "Year (Standardized)",
     y = "Fatality Rate",
     fill = "Credible Interval"
-  ) +
-  theme_minimal()
-```
-
-### Extract and Interpret Coefficients
-
-```{r}
-#| label: complete_pool_model interpretation
-
-# Extract posterior samples
-posterior_samples <- as_draws_df(complete_pool_model)
-
-# Summarize key parameters on logit scale
-posterior_samples %>%
-  select(b_Intercept, b_year_scaled) %>%
-  pivot_longer(everything(), names_to = "parameter", values_to = "value") %>%
-  group_by(parameter) %>%
-  summarise(
-    mean = mean(value),
-    sd = sd(value),
-    q025 = quantile(value, 0.025),
-    q975 = quantile(value, 0.975)
-  )
-
-# Convert intercept to probability scale for interpretation
-posterior_samples %>%
-  mutate(baseline_prob = plogis(b_Intercept)) %>%
-  summarise(
-    mean_baseline_fatality_rate = mean(baseline_prob),
-    q025 = quantile(baseline_prob, 0.025),
-    q975 = quantile(baseline_prob, 0.975)
   )
 ```
 
-### Model Interpretation
+### Prior Sensitivity Analysis
 
-The complete pooling model assumes:
-- All crashes share the same underlying fatality rate pattern
-- Temporal trend captured by `year_scaled` coefficient
-- No variation between countries, manufacturers, or other grouping factors
-- This serves as a baseline for comparison with partial pooling (hierarchical) models
+We conduct a prior sensitivity analysis on this model by trying out 3 different prior settings and comparing the estimated parameters. The priors we are using are:
+
+- **Model prior:** Intercept prior: $\mathcal{N}(1.4, 1)$, year coefficient prior: $\mathcal{N}(0, 0.5)$ (same as the model).
+- **Wide prior:** Intercept prior: $\mathcal{N}(1.4, 3)$, year coefficient prior: $\mathcal{N}(0, 1.5)$ (3 times as wide for both).
+- **Shifted prior:** Intercept prior: $\mathcal{N}(3.4, 1)$, year coefficient prior: $\mathcal{N}(2, 0.5)$ (both priors shifted by 2 to the right).
+
+| Prior Distribution | $\alpha$ | $\beta$ |
+|---|---|---|
+| Model prior | 0.81 | −0.18 |
+| Wide prior | 0.81 | −0.18 |
+| Shifted prior | 0.81 | −0.18 |
+
+The parameters are identical for all three priors. From these results it can be concluded that the model is very insensitive to the prior choice.

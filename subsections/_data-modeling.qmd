@@ -1,43 +1,75 @@
-We address these questions using hierarchical Bayesian modeling of fatality rates across aviation accidents from 1970 to 2024. In this approach we will assume that the aircrafts from the same manufacturers share some of the same characteristics, like similar design choices, engineering approaches, and safety systems. We still keep the information that all the aircrafts are similar with each other by having the high-level pooling for all the aircrafts. We will compare this partially-pooled model with two different models: fully pooled model and fully separate model.
+We model airplane crash fatality rates using three Bayesian models, each making different assumptions about information sharing across manufacturers. All models treat the number of fatalities $y_i$ in crash $i$ as binomially distributed given the number of people aboard $n_i$ and a crash-specific fatality probability $p_i$.
 
-## Hierarchical Models
-![Hierarchical Model (partial pooling)](images/hierarchical_model.png){#fig-model-hierarchical width=50% fig-align="center"}
+We use the logit link to constrain all predictions to $[0, 1]$:
 
-- What are hierarchies? Levels of abstractions that group data points into groups
-- Examples of hierarchies plane crash dataset:
-  - manufacturer
-  - plane model
-  - time of year plane crashed (month)
-- A benefit of hierarchical models is their ability to estimate results for lower levels in the hierarchy even when there is limited data available. [@sellforte2024hierarchical]
-- partial pooling
+$$\operatorname{logit}(p_i) = \ln\!\left(\frac{p_i}{1-p_i}\right)$$
 
-## Non-Hierarchical Models
-::: {layout-ncol=2}
-![Non-Hierarchical Model (no pooling)](images/non-hierarchical_model_no_pooling.png){#fig-model-non-hierarchical}
+When $\eta_i$ is a linear predictor, solving for $p_i$ gives:
 
-![Non-Hierarchical Model (complete pooling)](images/non-hierarchical_model_complete_pooling.png){#fig-model-non-hierarchical_pooling}
-:::
+$$p_i = \frac{\exp(\eta_i)}{1 + \exp(\eta_i)}$$
 
-- Non-hierarchical models fit parameters for each opservation seperately
-- Manufacturers are not independent
-- decades are not independent
-- Countries/regions are not independent
-- Complete pooling/no pooling
+This allows linear predictors $\eta_i \in (-\infty, \infty)$ to produce valid fatality probabilities.
 
-## Prior selection
-### Global intercept
-For the intercept term $\alpha$, we can use an informative prior by using the observed fatality rate of $\approx 0.8$ from the data. We can use a normal distribution with the mean value coming from the observed fatality rate transformed onto the logit scale by
+## Complete Pooling (Non-Hierarchical)
 
-$\operatorname{logit}(p) = \ln\!\left(\frac{p}{1-p}\right).$
+A complete pooling model assumes all observations are drawn from a single global distribution. In our plane crash setting this means every crash follows the same distribution regardless of manufacturer or any other grouping:
 
-For example, $\operatorname{logit}(0.8) \approx 1.386$, which we round to $1.4$. For a weakly informative prior like ours, a standard deviation of $1$ is a reasonable choice to keep the coefficient in a reasonable ballpark without adding too much constraint.
+$$\begin{align*}
+y_i &\sim \text{Binomial}(n_i, p_i) \\
+\text{logit}(p_i) &= \alpha + \beta \cdot \text{year\_scaled}_i
+\end{align*}$$
 
-### Year coefficient
-For the $\beta$ coefficient on the normalized year we can be more conservative. The fatality rate plot shows only little yearly change, so it is reasonable to constrain the $\beta$ prior to smaller values. A normal distribution with mean $0$ and standard deviation $0.5$ seems reasonable. The 95% credible interval for $\beta$ is then approximately $[-1.0, 1.0]$.
+The strength of this model is its simplicity; its weakness is that it cannot capture manufacturer-level differences.
 
-### Group level standard deviation
-In our hierarchical model we have an extra intercept term based on the aircraft manufacturer, which is drawn from a normal distribution with a mean of 0 and standard deviation of $\sigma$. We need a appropriate prior for this group level standard deviation term $\sigma$. Observing the manufacturer level data, we see that the fatality rates fall roughly between 0.6 and 0.95 on all manufacturers. We can assume that this interval corresponds to $\pm2\sigma$, so 95% of the groups. Converting this to the logit scale, we can calculate 
+## No Pooling (Non-Hierarchical)
 
-$\sigma$: $2\sigma \approx \frac{\operatorname{logit}(0.95) - \operatorname{logit}(0.6)}{2} \Rightarrow \sigma = \frac{\operatorname{logit}(0.95) - \operatorname{logit}(0.6)}{4} \approx 0.635$.
+A no pooling model gives each manufacturer its own completely independent distribution, with no information shared across groups. With $m[i]$ denoting the manufacturer of crash $i$:
 
- A halfnormal distribution with standard deviation of 0.6 should be a good prior choice. The mean of this distribution is $E[X] = \sigma\sqrt{\frac{2}{\pi}} \approx 0.479$, which seems reasonable for our model.
+$$\begin{align*}
+y_i &\sim \text{Binomial}(n_i, p_i) \\
+\text{logit}(p_i) &= \alpha_{m[i]} + \beta_{m[i]} \cdot \text{year\_scaled}_i
+\end{align*}$$
+
+This captures manufacturer-level differences but risks overfitting for manufacturers with few crashes, since they cannot borrow information from others.
+
+## Partial Pooling (Hierarchical)
+
+A partial pooling model combines both approaches: each manufacturer has its own parameters, but those parameters are drawn from a shared global distribution. This regularizes estimates for manufacturers with little data by pulling them toward the global mean:
+
+$$\begin{align*}
+y_i &\sim \text{Binomial}(n_i, p_i) \\
+\text{logit}(p_i) &= \alpha_0 + \beta_0 \cdot \text{year\_scaled}_i + \alpha_{m[i]} + \beta_{m[i]} \cdot \text{year\_scaled}_i \\[0.5em]
+\begin{bmatrix} \alpha_m \\ \beta_m \end{bmatrix} &\sim \mathcal{N}\!\left(\begin{bmatrix} 0 \\ 0 \end{bmatrix},\, \boldsymbol{\Sigma}\right), \quad \boldsymbol{\Sigma} = \begin{bmatrix} \sigma_\alpha^2 & \rho\,\sigma_\alpha\sigma_\beta \\ \rho\,\sigma_\alpha\sigma_\beta & \sigma_\beta^2 \end{bmatrix}
+\end{align*}$$
+
+The manufacturer-level effects $\alpha_m$ and $\beta_m$ are drawn from a multivariate normal distribution, which solves the overfitting problem of no pooling by borrowing strength from the global distribution.
+
+## Prior Selection
+
+### Global Intercept
+
+For the global intercept $\alpha$, we use a weakly informative prior centered on the observed fatality rate of $\approx 0.8$, transformed to the logit scale:
+
+$$\operatorname{logit}(0.8) = \ln\!\left(\frac{0.8}{0.2}\right) \approx 1.386 \approx 1.4$$
+
+We use $\alpha \sim \mathcal{N}(1.4,\, 1)$. The standard deviation of 1 keeps the prior weakly informative without over-constraining the estimate.
+
+### Global Year Coefficient
+
+For the year coefficient $\beta$, we use a more conservative prior. The fatality rate plot shows only a slight yearly trend, so we use $\beta \sim \mathcal{N}(0,\, 0.5)$, yielding a 95% credible interval of approximately $[-1.0,\, 1.0]$.
+
+### Manufacturer-Level Priors (No Pooling)
+
+For the manufacturer-specific intercepts and slopes in the no pooling model, we use $\mathcal{N}(0,\, 1)$ — a safe, weakly informative choice that allows the data to dominate while keeping estimates in a reasonable range. brms requires a single prior class for all manufacturer-level coefficients, making it impractical to set manufacturer-specific priors.
+
+### Group-Level Standard Deviation (Partial Pooling)
+
+For the group-level standard deviation $\sigma$ in the hierarchical model, we observe that manufacturer fatality rates fall roughly between 0.6 and 0.95 across all manufacturers. Assuming this range covers $\pm 2\sigma$ on the logit scale:
+
+$$\sigma \approx \frac{\operatorname{logit}(0.95) - \operatorname{logit}(0.6)}{4} \approx 0.635$$
+
+We use a half-normal prior $\sigma \sim \mathcal{N}^+(0,\, 0.6)$, whose expected value is $E[X] = 0.6\sqrt{2/\pi} \approx 0.479$.
+
+### Correlation Coefficient $\rho$
+
+For the correlation $\rho$ between manufacturer-level intercepts and slopes, we use $\rho \sim \text{LKJ}(2)$. The LKJ distribution is designed for correlation matrices. With shape parameter $\eta = 2 > 1$, the prior is skeptical of extreme correlations, producing a bell-shaped distribution centered at zero.

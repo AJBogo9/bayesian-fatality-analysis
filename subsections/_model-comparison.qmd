@@ -1,3 +1,5 @@
+To compare the three models, we use LOO-CV (Leave-One-Out Cross-Validation), which has the basic idea of: 1) remove an observation $i$, 2) train the model, 3) predict observation $i$. Then measure how well the model performed and compare the models. We measure the ELPD (Expected Log Predictive Density) and SE (Standard Error) for all models and then compare them with each other. We use the partial pooling model as the baseline.
+
 ```{r}
 #| label: model-comparison
 
@@ -5,6 +7,17 @@ no_pool_loo <- loo(no_pool_model)
 complete_pool_loo <- loo(complete_pool_model)
 partial_pool_loo <- loo(partial_pool_model)
 
-# Compare models
 loo_compare(no_pool_loo, complete_pool_loo, partial_pool_loo)
 ```
+
+| Model | elpd_diff | se_diff | $\lvert\text{elpd\_diff} / \text{se\_diff}\rvert$ |
+|---|---|---|---|
+| partial_pool_model | 0.0 | 0.0 | — |
+| no_pool_model | −16.5 | 13.3 | 1.24 |
+| complete_pool_model | −1944.8 | 692.3 | 2.81 |
+
+A good rule of thumb is that if $|\text{elpd\_diff}| < 1 \times \text{se\_diff}$, the models are close to equal, and if $|\text{elpd\_diff}| > 2 \times \text{se\_diff}$, there is a clear difference between the models. A higher ELPD value indicates better performance.
+
+The no pooling model seems to perform slightly worse than the partial pooling model, but the ratio of 1.24 is still close to 1 and could just be due to random noise, so no clear conclusions can be drawn from this.
+
+The complete pooling model, however, can be reported to perform significantly worse than the other two models. The reason for this is most likely that the model fails to capture the manufacturer level differences, and therefore predicts incorrectly for most crashes.

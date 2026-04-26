@@ -188,7 +188,9 @@ ggsave("figures/fatality-rate-trend.pdf", fig6, width = 5, height = 3.5)
 ``` -->
 
 
-To conduct a modern analysis on plane crash fatalities, we do not want to include observations from far back in the history. We need some reasonable cutoff point that keeps sufficient amount of data and allows us to model modern aircraft data. The fatalities trend shows a turning point at around 1975 so it is reasonable to choose that as our observation cutoff year. 
+To conduct a modern analysis on plane crash fatalities, we do not want to include observations from far back in the history. We need some reasonable cutoff point that keeps sufficient amount of data and allows us to model modern aircraft data. The fatalities trend shows a turning point around 1975, so it is reasonable to choose that as our observation cutoff year. This filtering brings our total observation count from 5013 down to 2188, so we are still left with plenty of data. We also only include observations from manufacturers with at least 10 crashes present in the data to stabilize the no pooling and partial pooling models. This brought our data down to 1766 observations.
+
+1975 is a good cutoff date, because it resembles a period that shares lots of characteristics with modern flight travel. The 1950s and 1960s saw an upsurge in commercial flights, aircraft carriers, and international flying routes [@airwaysmag_commercial_flight]. This upsurge was accompanied by great technological innovations. The most notable ones were the jet engine in the 1950s (safer and more reliable than the earlier piston engines) and the introduction of electronic instruments to the cockpit in the 1970s [@allianz_aviation_safety].
 
 ```{r}
 #| label: filtered-data-summary
@@ -201,8 +203,6 @@ cat("Observations before filtering:", len_before, "\n")
 cat("Observations after filtering:", len_after, "\n")
 cat("Rows removed:", len_before - len_after, "\n")
 ```
-
-Keep only manufacturers where we have data for over 10 crashes
 
 ```{r}
 #| label: manufacturer-filtering

@@ -1,3 +1,21 @@
+## Partial Pooling Model
+
+For the partially pooled model, we are predicting both a population level intercept and coefficient ($\alpha_0$ and $\beta_0$) and manufacturer level intercepts and coefficients ($\alpha_{m[i]}$ and $\beta_{m[i]}$). The partial pooling model is a combination of the techniques used in the no pooling model and the complete pooling model. The no pooling method assumed that each manufacturer had their own intercept and coefficient and the complete pooling model assumed that all manufacturers have the same intercept and coefficient. The partial pooling assumes that both of these conditions hold.
+
+$$\begin{align*}
+\text{Likelihood:} \quad & \\
+y_i &\sim \text{Binomial}(n_i, p_i) \\
+\text{logit}(p_i) &= \alpha_0 + \beta_0 \cdot \text{year\_scaled}_i + \alpha_{m[i]} + \beta_{m[i]} \cdot \text{year\_scaled}_i \\[1em]
+\text{Random effects:} \quad & \\
+\begin{bmatrix} \alpha_m \\ \beta_m \end{bmatrix} &\sim \mathcal{N}\!\left(\begin{bmatrix} 0 \\ 0 \end{bmatrix},\, \boldsymbol{\Sigma}\right), \quad \boldsymbol{\Sigma} = \begin{bmatrix} \sigma_\alpha^2 & \rho\,\sigma_\alpha\sigma_\beta \\ \rho\,\sigma_\alpha\sigma_\beta & \sigma_\beta^2 \end{bmatrix} \\[1em]
+\text{Priors:} \quad & \\
+\alpha_0 &\sim \mathcal{N}(1.4,\, 1) \\
+\beta_0 &\sim \mathcal{N}(0,\, 0.5) \\
+\sigma_\alpha,\, \sigma_\beta &\sim \mathcal{N}^+(0,\, 0.6) \\
+\rho &\sim \text{LKJ}(2)
+\end{align*}$$
+
+### Model
 
 ```{r}
 #| label: partial_pool_model
@@ -11,47 +29,80 @@ hierarchical_formula <- bf(
 priors <- c(
     prior(normal(1.4, 1), class = Intercept),
     prior(normal(0, 0.5), class = b),
-    prior(normal(0, 0.6), class = sd), # brms uses halfnormal automatically for sd 
+    prior(normal(0, 0.6), class = sd),
     prior(lkj(2), class = cor)
   )
 
-# Specify hierarchical model with filtered manufacturers
 partial_pool_model <- brm(
   formula = hierarchical_formula,
   prior = priors,
   data = crashes_filtered,
   seed = 42,
-  control = list(adapt_delta = 0.95),  # Can lower this now
+  control = list(adapt_delta = 0.95),
   refresh = 0,
-  cores = 4
+  cores = 4,
+  backend = "cmdstanr"
 )
 ```
 
-## Model 3 Diagnostics
+### Convergence Diagnostics
 
 ```{r}
 #| label: partial_pool_convergence
 #| fig-width: 10
 #| fig-height: 6
 
-# Convergence diagnostics summary
 summary(partial_pool_model)
 
-# Trace plots for key parameters
-mcmc_plot(partial_pool_model, type = "trace", 
-          variable = c("b_Intercept", "b_year_scaled", 
+mcmc_plot(partial_pool_model, type = "trace",
+          variable = c("b_Intercept", "b_year_scaled",
                       "sd_aircraft_manufacturer__Intercept",
                       "sd_aircraft_manufacturer__year_scaled"))
 ```
 
+The partial pooling model MCMC converged well with all $\hat{R}$ values smaller or equal to 1.01:
+
+| Parameter | $\hat{R}$ | Bulk ESS | Tail ESS |
+|---|---|---|---|
+| $\sigma_\alpha$ (SD Intercept) | 1.00 | 875 | 1707 |
+| $\sigma_\beta$ (SD year_scaled) | 1.01 | 779 | 1184 |
+| $\rho$ (Correlation) | 1.00 | 961 | 1537 |
+| $\alpha_0$ (Intercept) | 1.01 | 511 | 959 |
+| $\beta_0$ (year_scaled) | 1.00 | 516 | 951 |
+
+Even though our process converged, the low ESS values are troublesome. Both bulk ESS and tail ESS values should be over 1000 in an ideal case. The models ESS values are relatively close to 1000 for the standard deviation and correlation parameters, but are far away from ideal for the intercept $\alpha_0$ and the coefficient $\beta_0$. We tried doubling the warmup and iteration counts to 1000 and 4000 respectively, but the ESS numbers stay the same. This means that especially for $\alpha_0$ and $\beta_0$, we don't have enough independent samples for truly reliable posterior estimates.
+
+### Posterior Predictive Check
+
 ```{r}
 #| label: partial_pool_ppc
-#| fig-width: 8
-#| fig-height: 5
+#| fig-width: 12
+#| fig-height: 4
 
-# Posterior predictive check
-pp_check(partial_pool_model, ndraws = 100, type = "dens_overlay") +
-  labs(title = "Posterior Predictive Check: Partial Pooling Model",
-       x = "Number of Fatalities",
-       y = "Density")
+pp_check(partial_pool_model, ndraws = 100, type = "ecdf_overlay") +
+  labs(title = "Partial Pool — ECDF overlay")
+
+pp_check(partial_pool_model, ndraws = 100, type = "stat", stat = "mean") +
+  labs(title = "Partial Pool — mean comparison")
+
+pp_check(partial_pool_model, ndraws = 100, type = "stat", stat = "sd") +
+  labs(title = "Partial Pool — SD comparison")
 ```
+
+The ECDF of the partially pooled model matches the original observations fairly well. Same for the observed mean. The standard deviation comparison has the same problem as the other two models: it is under-dispersed.
+
+### Prior Sensitivity Analysis
+
+For the partial pooling model, we analyse how changing our prior assumptions on how similar manufacturers are affects the posterior predictions. We do this by using three different priors for our standard deviations $\sigma$:
+
+- **Baseline:** $\sigma \sim \mathcal{N}^+(0, 0.6)$ (original)
+- **Tight:** $\sigma \sim \mathcal{N}^+(0, 0.3)$ (assumes manufacturers more similar)
+- **Wide:** $\sigma \sim \mathcal{N}^+(0, 1.2)$ (assumes manufacturers differ more)
+
+| Prior Scenario | Intercept Mean | Year Effect Mean | SD Manufacturer Mean |
+|---|---|---|---|
+| Baseline | 1.271 | 0.019 | 1.205 |
+| Tight | 1.263 | 0.024 | 1.037 |
+| Wide | 1.280 | 0.016 | 1.295 |
+
+The means don't show noticeable effects from different prior choices. The standard deviation is affected by changing the prior distributions for it, but this is expected — the standard deviation priors should only affect the standard deviation posteriors. Thus we can conclude that our model is robust.

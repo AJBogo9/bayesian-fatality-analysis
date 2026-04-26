@@ -1,39 +1,31 @@
 ## No Pooling Model
 
-This model treats each aircraft manufacturer completely separately, fitting independent fatality rate patterns for each manufacturer without borrowing any information between groups.
+This model treats every airplane manufacturer as their own independent entity, without sharing any information across any other possible grouping in the data. With $i$ being the index of a plane crash and $m[i]$ being the manufacturer $m$ for crash $i$:
 
-### Fit No Pooling Model
+$$\begin{align*}
+\text{Likelihood:} \quad & \\
+y_i &\sim \text{Binomial}(n_i, p_i) \\
+\text{logit}(p_i) &= \alpha_{m[i]} + \beta_{m[i]} \cdot \text{year\_scaled}_i \\[1em]
+\text{Priors:} \quad & \\
+\alpha_m &\sim \mathcal{N}(0,\, 1) \quad \text{for } m = 1, \ldots, M \\
+\beta_m &\sim \mathcal{N}(0,\, 1) \quad \text{for } m = 1, \ldots, M
+\end{align*}$$
 
-We'll fit separate binomial models per manufacturer using fixed effects. This approach:
-- Gives each manufacturer its own intercept and temporal trend
-- Uses no information sharing (no pooling) between manufacturers
-- Requires sufficient data per manufacturer (minimum 10 crashes)
-- Uses the same binomial family and logit link as other models
+This means that the model assumes that each crash has its own fatality rate based on the manufacturer and the year, and crashes from other manufacturers do not influence each other in any way. With this model, the estimates for manufacturers with only a few crashes in the data become unstable, because they can't borrow information from other manufacturers.
+
+### Model
 
 ```{r}
 #| label: no_pool_model
 #| cache: true
 
-# Check the data structure
-crashes_filtered %>%
-  summarise(
-    n_manufacturers = n_distinct(aircraft_manufacturer),
-    n_crashes = n(),
-    n_zeros = sum(fatalities == 0),
-    n_all_died = sum(fatalities == aboard),
-    min_rate = min(fatality_rate),
-    max_rate = max(fatality_rate)
-  )
-
-# Fit no-pooling model with separate intercept and slope per manufacturer
-# Using 0 to remove the global intercept, then add manufacturer-specific intercepts
 no_pool_formula <- bf(
 	fatalities | trials(aboard) ~ 0 + aircraft_manufacturer + aircraft_manufacturer:year_scaled,
 	family = binomial(link = "logit")
 	)
 
 priors <- c(
-		prior(normal(0, 1), class = b) # Weakly informative prior for all
+		prior(normal(0, 1), class = b)
 		)
 
 no_pool_model <- brm(
@@ -42,59 +34,68 @@ no_pool_model <- brm(
   data = crashes_filtered,
 	seed = 42,
 	refresh = 0,
-	cores = 4
+	cores = 4,
+	backend = "cmdstanr"
 )
 ```
 
-### Model Summary
+### Convergence Diagnostics
 
 ```{r}
-#| label: no_pool_model summary
+#| label: no_pool_model_summary
 
 summary(no_pool_model)
 ```
 
-### Posterior Predictive Checks
+The $\hat{R}$ value for each of the parameters is 1.00, which means all coefficients converged properly. The bulk ESS values vary on the scale [4200, 5800] and the tail ESS values on the scale [2600, 3500]. These ESS values are far more than is needed for a reliable posterior estimation, so no problems there. The model had no divergences.
+
+### Posterior Predictive Check
 
 ```{r}
-#| label: no_pool_model fit check
+#| label: no_pool_model_fit_check
+#| fig-width: 12
+#| fig-height: 4
 
-# Check model fit
-pp_check(no_pool_model)
-pp_check(no_pool_model, type = "scatter_avg", group = "aircraft_manufacturer")
-pp_check(no_pool_model, type = "stat", stat = "mean")
-pp_check(no_pool_model, type = "stat", stat = "sd")
+pp_check(no_pool_model, ndraws = 100, type = "ecdf_overlay") +
+  labs(title = "No Pool — ECDF overlay")
 
+pp_check(no_pool_model, ndraws = 100, type = "stat", stat = "mean") +
+  labs(title = "No Pool — mean comparison")
+
+pp_check(no_pool_model, ndraws = 100, type = "stat", stat = "sd") +
+  labs(title = "No Pool — SD comparison")
 ```
 
-### Visualize Predictions
+The ECDF (empirical cumulative distribution function) shows that the model is slightly off when compared to the real data. We can see that at the start, the observed ECDF rises faster and higher than the model ECDF, indicating that the model predicts less crashes with close to 0 fatalities. However, in the 25–100 fatalities area, the observed ECDF lags behind the model ECDF meaning that the model estimates more crashes that lead to those fatality numbers.
+
+The mean comparison plot shows that the true fatalities mean lies close to the center of the model simulated fatalities distribution, meaning that the model estimates the overall mean fatality rate correctly.
+
+The standard deviation comparison plot shows that the true fatalities standard deviation is much larger than what the model estimates. In other words, the model predicts too little variability and is under-dispersed.
+
+### Predictions by Manufacturer
 
 ```{r}
-#| label: no_pool_model visualisation
+#| label: no_pool_model_visualisation
 #| fig-width: 14
 #| fig-height: 10
 
-# Select top manufacturers for visualization
 top_manufacturers <- crashes_filtered %>%
   count(aircraft_manufacturer, sort = TRUE) %>%
   slice_head(n = 9) %>%
   pull(aircraft_manufacturer)
 
-# Create prediction data for these manufacturers
 pred_data <- expand_grid(
   aircraft_manufacturer = top_manufacturers,
-  year_scaled = seq(min(crashes_filtered$year_scaled), 
-                    max(crashes_filtered$year_scaled), 
+  year_scaled = seq(min(crashes_filtered$year_scaled),
+                    max(crashes_filtered$year_scaled),
                     length.out = 100)
 ) %>%
   mutate(aboard = round(mean(crashes_filtered$aboard)))
 
-# Generate predictions (these are expected counts of fatalities)
 predictions <- pred_data %>%
   add_epred_draws(no_pool_model, ndraws = 1000) %>%
-  mutate(.epred_rate = .epred / aboard)  # Convert to rate for plotting
+  mutate(.epred_rate = .epred / aboard)
 
-# Plot predictions with uncertainty, faceted by manufacturer
 ggplot() +
   stat_lineribbon(
     data = predictions,
@@ -116,62 +117,35 @@ ggplot() +
     x = "Year (Standardized)",
     y = "Fatality Rate",
     fill = "Credible Interval"
-  ) +
-  theme_minimal()
+  )
 ```
 
-### Extract and Interpret Coefficients
+### Prior Sensitivity Analysis
 
-```{r}
-#| label: no_pool_model interpretation
+We conduct a prior sensitivity analysis on this model by trying out 3 different priors and comparing the estimated parameters of 4 manufacturers. The priors we are using are:
 
-# Extract posterior samples
-posterior_samples <- as_draws_df(no_pool_model)
+- **Model prior:** $\mathcal{N}(0, 1)$ (same as the model).
+- **Wide prior:** $\mathcal{N}(0, 3)$ (a much wider distribution).
+- **Shifted prior:** $\mathcal{N}(2, 1)$ (shifted to the right).
 
-# Get coefficient names
-coef_names <- colnames(posterior_samples)[grep("^b_", colnames(posterior_samples))]
+| Prior Distribution | Manufacturer | $\alpha$ | $\beta$ |
+|---|---|---|---|
+| Model $\mathcal{N}(0, 1)$ | Boeing | 0.72 | −0.34 |
+| | Bell | 1.94 | 0.82 |
+| | Lockheed | 0.16 | 1.00 |
+| | Mil | 4.34 | −1.67 |
+| Wide $\mathcal{N}(0, 3)$ | Boeing | 0.72 | −0.34 |
+| | Bell | 2.20 | 0.63 |
+| | Lockheed | 0.16 | 1.00 |
+| | Mil | 5.16 | −2.30 |
+| Shifted $\mathcal{N}(2, 1)$ | Boeing | 0.72 | −0.34 |
+| | Bell | 1.96 | 0.96 |
+| | Lockheed | 0.16 | 1.00 |
+| | Mil | 4.40 | −1.70 |
 
-# Summarize all coefficients
-posterior_samples %>%
-  select(all_of(coef_names)) %>%
-  pivot_longer(everything(), names_to = "parameter", values_to = "value") %>%
-  group_by(parameter) %>%
-  summarise(
-    mean = mean(value),
-    sd = sd(value),
-    q025 = quantile(value, 0.025),
-    q975 = quantile(value, 0.975),
-    .groups = "drop"
-  ) %>%
-  arrange(mean)
+We can see that the parameters do not vary much. For manufacturers with many observations in the data (Boeing: 248 observations, Lockheed: 106 observations), the parameters are identical for every prior. For manufacturers with a fewer number of observations (Mil: 41 observations, Bell: 33 observations), the parameter values show more variance:
 
-# Convert manufacturer intercepts to probability scale for interpretation
-# Extract just the main effects (intercepts) for top manufacturers
-manuf_intercepts <- posterior_samples %>%
-  select(starts_with("b_aircraft_manufacturer")) %>%
-  select(!ends_with("year_scaled")) %>%
-  pivot_longer(everything(), names_to = "manufacturer", values_to = "logit_value") %>%
-  mutate(
-    manufacturer = str_remove(manufacturer, "^b_aircraft_manufacturer"),
-    probability = plogis(logit_value)
-  ) %>%
-  group_by(manufacturer) %>%
-  summarise(
-    mean_fatality_rate = mean(probability),
-    q025 = quantile(probability, 0.025),
-    q975 = quantile(probability, 0.975),
-    .groups = "drop"
-  ) %>%
-  arrange(desc(mean_fatality_rate))
+$$\text{Mil: } \operatorname{Var}(\alpha) \approx 0.21,\quad \operatorname{Var}(\beta) \approx 0.11$$
+$$\text{Bell: } \operatorname{Var}(\alpha) \approx 0.02,\quad \operatorname{Var}(\beta) \approx 0.03$$
 
-print(manuf_intercepts)
-```
-
-### Model Interpretation
-
-The no-pooling model assumes:
-- Each manufacturer has its own independent fatality rate pattern
-- No information is shared between manufacturers (no pooling)
-- Temporal trends vary by manufacturer
-- This provides maximum flexibility but requires sufficient data per manufacturer
-- Comparison point: shows what the data suggests when we allow complete independence
+These variances are tolerable and still show the same trend, just in different strengths. The results show that the model is stable under reasonable prior changes, and the main conclusions drawn from the model do not depend on the chosen prior.

@@ -1,17 +1,21 @@
-The dataset used in the project describes the air plane crashes from 1908 to 2024. In our project, we'll only focus on crashes that happened after the year 1970. **(WHY???)** We make this decision to get a better picture of the current state of the industry. The dataset can be found and downloaded from Kaggle [@jogwums2023aircrashes].
+This project models the fatality rates of airplane crashes from 1975 to 2024. We use non-hierarchical and hierarchical Bayesian models with the airplane manufacturer as the grouping variable in the hierarchical model. Specifically, we compare two non-hierarchical models (complete pooling and no pooling) against one hierarchical model (partial pooling).
 
 ## Motivation
 
-**rewrite these?**
-Aviation has undergone massive developments since the first commercial flight in 1914. Airplane safety has always been the top priority for airlines; a single airplane crash will drive away customers to safer perceived airlines and, of course, cost lives. Although this priority of making airplanes as safe as possible has significantly reduced the number of crashes over the years, accidents still continue to occur. However, not all accidents are the same; survivability in crashes varies significantly. Understanding which factors influence survivability in crashes remains crucial for manufacturers and airlines seeking to minimize the loss of life. While accident prevention remains the most important priority, understanding the fatality patterns when accidents do occur is equally important in discussions of airplane safety. 
+Aviation has undergone massive developments since the first commercial flight in 1914. Airplane safety has always been the top priority for airlines; a single airplane crash will drive away customers to safer perceived airlines and, of course, cost lives. Although this priority of making airplanes as safe as possible has significantly reduced the number of crashes over the years, accidents still continue to occur.
+
+Not all accidents are the same; survivability in crashes varies significantly. Understanding which factors influence survivability in crashes remains crucial for manufacturers and airlines seeking to minimize the loss of life. While accident prevention remains the most important priority, understanding the fatality patterns when accidents do occur is equally important in discussions of airplane safety.
 
 ## Problem
 
-When aviation accidents occur, the fatality rates vary significantly from incidents where all passengers survive to catastrophic losses of all who were on board. This variation raises critical questions: Has the likelihood of surviving an airplane crash improved over time? Do certain airplane manufacturers demonstrate consistently higher crash survival rates than others? How much of the variation in crash fatality rates can be attributed to crash specific details of individual accidents versus inherent airplane characteristics? These are questions that we hope to answer in our report.
+When aviation accidents occur, the fatality rates vary significantly — from incidents where all passengers survive to catastrophic losses of everyone on board. This variation raises critical questions: Has the likelihood of surviving an airplane crash improved over time? Do certain airplane manufacturers demonstrate consistently higher crash survival rates than others? How much of the variation in crash fatality rates can be attributed to crash-specific details of individual accidents versus inherent airplane characteristics? These are questions that we hope to answer in our report.
 
-## Similar Projects
-- Kaggle has three projects linked to the plain crash dataset [@jogwums2023aircrashes]
-- All with python, not R like ours
-- None of the projects use the bayesian data analysis tools we use in our project (hierarchical and non-hierarchical models, priors and posteriors)
-- Two of the three projects have exploratory data analysis like ours (in the beginning of our report)
-- Other than the three notebooks in Kaggle, there are no other similar projects with the dataset that the team would be aware of
+## Main Modeling Idea
+
+We address these questions using hierarchical and non-hierarchical Bayesian modeling of fatality rates across aviation accidents from 1975 to 2024. We assume that aircraft from the same manufacturer share some of the same characteristics, such as similar design choices, engineering approaches, and safety systems. We still account for the overall similarity between all aircraft by including a global population-level distribution. We compare a partial pooling model against two baselines: complete pooling and no pooling.
+
+## Dataset
+
+The dataset was obtained from a Kaggle repository created by Jonathan Ogwumike [@jogwums2023aircrashes]. According to the repository description, the dataset has been used to teach students about Power BI and Python.
+
+The dataset has two notable projects linked to it. Both are written in Python, and neither uses hierarchical models to analyze the fatality rate trend. Both include some exploratory data analysis, but since these are in Python we wrote our own analysis code in R.

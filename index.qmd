@@ -37,15 +37,34 @@ execute:
 
 # Discussion
 
-- known issues
-- potential improvements
+Although the partial pooling model performs best according to LOO cross-validation, none of the three models succeeds in accurately modeling the structure of the real data, as revealed by the posterior predictive check analysis.
+
+The two non-hierarchical models have their obvious limitations, but the interesting question is: why does the hierarchical model fail? On paper, it should perform well, because it uses population level information as well as captures the manufacturer level differences. Evidently, it still has its limitations.
+
+The problem with all of our models seemed to be that they were under-dispersed, meaning that they underestimated the variance. The reason for this mainly comes from our use of binomial likelihood for predicting the fatalities. The variance formula of binomial likelihood for an observation $i$ is
+
+$$\operatorname{Var}(Y_i) = n_i p_i (1 - p_i)$$
+
+This formula is fixed once $n_i$ and $p_i$ are known and is bounded by $n_i / 4$ (when $p_i = 0.5$). The true variances in the observed data were shown to be much larger than the models', because the binomial variance simply cannot reach the true variability values. As a potential improvement for the models, a different likelihood function that could combat this under-dispersion problem should be used.
+
+Another reason that our models fail is much simpler. Airplane crashes simply cannot be modeled accurately, especially with so little information. There are countless factors that can affect the fatality rate of a crash and there is a lot of randomness included. One could try to add more predictors and see if it yields better results. But even with more predictors included, the results would still most likely be inaccurate, but perhaps better than what we reached.
 
 # Conclusions
 
-- What was learned?
+In our report, we modeled fatality rate trends with hierarchical and non-hierarchical models. We used three types of models: complete pooling, no pooling and partial pooling models. From these models the partial pooling model performed the best with the no pooling model coming in a close second. We used LOO-CV to compare our models.
 
-# Self reflection
+One of our research questions was whether there are differences in the fatality rates of manufacturers. The fact that the partial pooling and no pooling models performed well would suggest that fatalities are modeled better assuming that each manufacturer has their own parameters and distributions.
 
-- What did the group learn during the project?
+According to our prior sensitivity analysis, the models were quite unaffected by changes in priors. This means that our models are able to model the fatality rates well without the priors having too big of an effect on the model.
+
+In our posterior predictive analysis, we noticed that our models weren't capturing the variance of the original observations. The variance of our models was too small. This was due to the fixed maximum variance of the binomial model being too small to correctly model the real crash variance.
+
+# Self Reflection
+
+The project was a great summary of the key concepts taught in the Bayesian Data Analysis course. During the course we acquired basic skills in Bayesian data analysis and during the project we got to use them in practice and deepen our understanding about the methods.
+
+In this report we discussed things like hierarchical and non-hierarchical models, how to choose priors and test the effects of these priors on the predictions, how to run MCMC simulations and how to compare and evaluate the models these simulations suggest.
+
+Running MCMC simulations is computationally expensive and the project showed the importance of access to cloud computing resources. Running the MCMC code could take over 30 minutes on old hardware while it took 5–10 minutes to run on modern cloud hardware in JupyterHub.
 
 # References

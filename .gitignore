@@ -27,3 +27,5 @@ report/build/
 *.snm
 *.synctex.gz
 *.toc
+
+**/*.quarto_ipynb
